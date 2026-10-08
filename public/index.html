@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Inventario / WMS - Control Simplificado</title>
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3.3 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- FontAwesome 6.5.1 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- SweetAlert2 CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <style>
+    :root {
+      --inv-primary: #4f46e5;
+      --inv-primary-hover: #4338ca;
+      --inv-surface: #ffffff;
+      --inv-bg: #f8fafc;
+      --inv-border: #e2e8f0;
+      --inv-text: #1e293b;
+      --inv-text-muted: #64748b;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--inv-bg);
+      color: var(--inv-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Navbar Estilizada */
+    .inv-navbar {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Pestañas de Almacén */
+    .nav-pills .nav-link {
+      color: #64748b;
+      font-weight: 600;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1.25rem;
+      transition: all 0.2s ease;
+    }
+    .nav-pills .nav-link:hover {
+      color: var(--inv-primary);
+      background-color: #f1f5f9;
+    }
+    .nav-pills .nav-link.active {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+
+    /* Semáforo de Caducidad */
+    .badge-fefo-critico {
+      background-color: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+    .badge-fefo-proximo {
+      background-color: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+    .badge-fefo-optimo {
+      background-color: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+    .badge-fefo-vencido {
+      background-color: #1e293b;
+      color: #ffffff;
+    }
+
+    .modal-content {
+      border-radius: 1rem;
+      border: 1px solid var(--inv-border);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    }
+
+    .nav-tabs .nav-link {
+      color: #475569;
+      border-top-left-radius: 0.5rem;
+      border-top-right-radius: 0.5rem;
+    }
+    .nav-tabs .nav-link.active {
+      color: var(--inv-primary) !important;
+      border-color: #dee2e6 #dee2e6 #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================== -->
+  <!-- 1. NAVBAR SUPERIOR ESTILIZADO              -->
+  <!-- ========================================== -->
+  <nav class="navbar navbar-expand-lg navbar-dark inv-navbar sticky-top py-2.5 shadow-sm">
+    <div class="container-fluid px-3 px-lg-4">
+      
+      <!-- Logo y Título -->
+      <a class="navbar-brand d-flex align-items-center gap-2.5" href="index.html">
+        <div class="rounded-3 text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #4338ca);">
+          <i class="fa-solid fa-boxes-stacked fs-5"></i>
+        </div>
+        <div>
+          <span class="fw-bold tracking-tight text-white d-block lh-1">SISTEMA DE INVENTARIO</span>
+          <span class="text-white-50 small lh-1" style="font-size: 0.72rem;">Control Simplificado de Stock y Lotes</span>
+        </div>
+      </a>
+
+      <!-- Botón Colapsable Móvil -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#invNavbarContent">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Menú y Acciones Principales -->
+      <div class="collapse navbar-collapse" id="invNavbarContent">
+        
+        <!-- Acciones en Cabecera -->
+        <div class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 d-flex align-items-center gap-2 pt-2 pt-lg-0">
+          
+          <!-- BOTÓN ÚNICO: + Nuevo Producto (EXCLUSIVO 'ADMIN') -->
+          <button id="btn-nuevo-producto-nav" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto" style="background: #6366f1; border-color: #6366f1;">
+            <i class="fa-solid fa-plus"></i>
+            <span>+ Nuevo Producto</span>
+          </button>
+
+          <!-- BOTONES OPERATIVOS RÁPIDOS (EXCLUSIVOS 'OPERARIO') -->
+          <button id="btn-operario-entrada" class="btn btn-sm btn-success d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
+            <i class="fa-solid fa-arrow-down"></i>
+            <span>📥 Registrar Entrada</span>
+          </button>
+
+          <button id="btn-operario-salida" class="btn btn-sm btn-danger d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
+            <i class="fa-solid fa-arrow-up"></i>
+            <span>📤 Registrar Salida / Despacho</span>
+          </button>
+
+          <!-- BOTÓN GENERAL ADMIN: Entrada / Salida por Lote -->
+          <button id="btn-movimiento-nav" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-admin" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
+            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            <span>Entrada / Salida por Lote</span>
+          </button>
+
+        </div>
+
+        <!-- Información de Sesión y Salida -->
+        <div class="d-flex align-items-center gap-3 pt-2 pt-lg-0 border-top border-lg-0 border-secondary">
+          <div class="d-flex align-items-center gap-2 text-white">
+            <div class="rounded-circle bg-white text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-size: 0.85rem;" id="user-avatar-initials">
+              US
+            </div>
+            <div class="d-none d-sm-block text-start">
+              <div class="small fw-semibold text-white lh-1" id="user-nombre">Cargando...</div>
+              <span class="badge mt-1" id="user-rol">ROL</span>
+            </div>
+          </div>
+
+          <button id="btn-logout" class="btn btn-sm btn-danger d-flex align-items-center gap-1.5 px-2.5 py-1.5 rounded-3 shadow-xs" title="Cerrar Sesión">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span class="d-none d-md-inline">Salir</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- ========================================== -->
+  <!-- 2. CONTENIDO PRINCIPAL POR PESTAÑAS        -->
+  <!-- ========================================== -->
+  <div class="container-fluid py-4 flex-grow-1">
+
+    <!-- MENÚ DE PESTAÑAS PRINCIPAL -->
+    <ul class="nav nav-tabs fw-bold mb-3" id="mainTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active d-flex align-items-center gap-2" id="tab-inv-btn" data-bs-toggle="tab" data-bs-target="#tab-inventario" type="button" role="tab">
+          <i class="fa-solid fa-boxes-stacked text-primary"></i>
+          <span>📦 Inventario y Almacenes</span>
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-hist-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab" onclick="cargarHistorialMovimientos()">
+          <i class="fa-solid fa-clock-rotate-left text-info"></i>
+          <span>📋 Historial de Movimientos</span>
+        </button>
+      </li>
+      <li class="nav-item solo-admin" role="presentation" id="nav-item-gestion-admin">
+        <button class="nav-link d-flex align-items-center gap-2" id="tab-gest-btn" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button" role="tab">
+          <i class="fa-solid fa-gear text-danger"></i>
+          <span>⚙️ Gestión del Sistema</span>
+        </button>
+      </li>
+    </ul>
+
+    <!-- CONTENIDO DE LAS PESTAÑAS -->
+    <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom shadow-sm" id="mainTabContent">
+      
+      <!-- PESTAÑA 1: 📦 INVENTARIO Y ALMACENES -->
+      <div class="tab-pane fade show active" id="tab-inventario" role="tabpanel">
+        
+        <!-- Pestañas Pills para cambiar de Almacén -->
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-uppercase small fw-bold text-muted tracking-wider">
+              <i class="fa-solid fa-building me-1"></i> Seleccione la Sede / Almacén:
+            </span>
+          </div>
+          <ul class="nav nav-pills gap-2 bg-light p-2 rounded-4 border shadow-xs flex-nowrap overflow-auto" id="pills-almacenes" role="tablist">
+            <li class="nav-item">
+              <span class="nav-link text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando sedes...</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Vista Detallada del Almacén Activo -->
+        <div class="card border rounded-4 shadow-sm bg-white overflow-hidden mb-3">
+          <!-- Cabecera de Almacén con Filtros y Buscador -->
+          <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-2.5">
+                <div class="rounded-3 bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                  <i class="fa-solid fa-warehouse fs-5"></i>
+                </div>
+                <div>
+                  <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <h5 class="fw-bold mb-0 text-dark" id="almacen-activo-nombre">Almacén Central</h5>
+                    <span class="badge bg-light text-secondary border font-monospace" id="almacen-activo-codigo">ALM-1</span>
+                  </div>
+                  <small class="text-muted" id="almacen-activo-direccion">Ubicación</small>
+                </div>
+              </div>
+
+              <div class="d-flex flex-wrap align-items-center gap-2">
+                <!-- Buscador de stock -->
+                <div class="input-group input-group-sm" style="min-width: 240px;">
+                  <span class="input-group-text bg-light text-muted border-end-0">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                  </span>
+                  <input type="text" id="filtro-buscar" class="form-control border-start-0 ps-0" placeholder="Buscar producto o lote...">
+                </div>
+
+                <!-- Filtro FEFO -->
+                <select id="filtro-fefo" class="form-select form-select-sm w-auto">
+                  <option value="">Todos los Lotes</option>
+                  <option value="critico">Próximos a Vencer (&le; 30 días)</option>
+                  <option value="proximo">Vencimiento Medio (&le; 90 días)</option>
+                  <option value="optimo">Vencimiento Óptimo (&gt; 90 días)</option>
+                  <option value="vencido">Lotes Vencidos</option>
+                </select>
+
+                <!-- Botón de Actualizar -->
+                <button id="btn-recargar-stock" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" title="Actualizar datos">
+                  <i class="fa-solid fa-rotate"></i>
+                  <span class="d-none d-sm-inline">Actualizar</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leyenda de Semáforo de Caducidad -->
+          <div class="px-3 px-md-4 py-2 bg-light border-bottom d-flex flex-wrap align-items-center gap-2 small">
+            <span class="fw-bold text-secondary me-1">Semáforo de Caducidad:</span>
+            <span class="badge badge-fefo-critico py-1 px-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Crítico (&le; 30 días)</span>
+            <span class="badge badge-fefo-proximo py-1 px-2"><i class="fa-solid fa-clock me-1"></i>Próximo (31 a 90 días)</span>
+            <span class="badge badge-fefo-optimo py-1 px-2"><i class="fa-solid fa-circle-check me-1"></i>Óptimo (&gt; 90 días)</span>
+            <span class="badge badge-fefo-vencido py-1 px-2"><i class="fa-solid fa-ban me-1"></i>Vencido</span>
+          </div>
+
+          <!-- Tabla de Productos del Almacén -->
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="tabla-productos-almacen">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3 ps-md-4">Producto</th>
+                    <th>Código de Barras</th>
+                    <th>Número de Lote</th>
+                    <th>Vencimiento</th>
+                    <th class="text-end">Stock Disponible</th>
+                    <th class="text-center">Estado (FEFO)</th>
+                    <th class="text-center pe-3 pe-md-4">Acción Rápida</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-productos-almacen">
+                  <tr>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                      <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                      Cargando inventario...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- PESTAÑA 2: 📋 HISTORIAL DE MOVIMIENTOS -->
+      <div class="tab-pane fade" id="tab-historial" role="tabpanel">
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+          <div>
+            <h4 class="fw-bold m-0 text-primary d-flex align-items-center gap-2">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+              <span>📋 Historial de Movimientos</span>
+            </h4>
+            <small class="text-muted">Registro auditado de operaciones de entrada y despacho</small>
+          </div>
+
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <!-- Buscador por texto -->
+            <div class="input-group input-group-sm" style="min-width: 240px;">
+              <span class="input-group-text bg-light text-muted border-end-0">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+              <input type="text" id="filtro-historial-texto" class="form-control border-start-0 ps-0" placeholder="Buscar producto, lote o almacén...">
+            </div>
+
+            <!-- Selector por tipo ENTRADA / SALIDA -->
+            <select id="filtro-historial-tipo" class="form-select form-select-sm w-auto">
+              <option value="">Todos los tipos</option>
+              <option value="ENTRADA">📥 ENTRADA</option>
+              <option value="SALIDA">📤 SALIDA</option>
+            </select>
+
+            <!-- Botón de Actualizar -->
+            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="cargarHistorialMovimientos()">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Actualizar</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle border">
+            <thead class="table-dark">
+              <tr>
+                <th>Fecha / Hora</th>
+                <th class="text-center">Tipo</th>
+                <th>Producto</th>
+                <th>Lote</th>
+                <th>Almacén</th>
+                <th class="text-end">Cantidad</th>
+                <th>Usuario Responsable</th>
+              </tr>
+            </thead>
+            <tbody id="tabla-historial-body">
+              <tr>
+                <td colspan="7" class="text-center text-muted">Cargando historial de movimientos...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PESTAÑA 3: ⚙️ GESTIÓN DEL SISTEMA (SOLO ADMIN) -->
+      <div class="tab-pane fade" id="tab-gestion" role="tabpanel">
+        <div class="card border rounded-4 shadow-sm bg-white overflow-hidden mb-3">
+          <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <div class="rounded-3 bg-danger-subtle text-danger p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                <i class="fa-solid fa-users-gear fs-5"></i>
+              </div>
+              <div>
+                <h5 class="fw-bold mb-0 text-dark">Gestión y Creación de Usuarios</h5>
+                <small class="text-muted">Administración de accesos y asignación de roles del personal</small>
+              </div>
+            </div>
+
+            <button id="btn-abrir-modal-usuario" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs" data-bs-toggle="modal" data-bs-target="#modal-nuevo-usuario" style="background: #4f46e5; border-color: #4f46e5;">
+              <i class="fa-solid fa-user-plus"></i>
+              <span>+ Registrar Nuevo Usuario</span>
+            </button>
+          </div>
+
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0" id="tabla-usuarios">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3 ps-md-4">ID</th>
+                    <th>Nombre del Usuario</th>
+                    <th>Correo Electrónico</th>
+                    <th class="text-center">Rol Asignado</th>
+                    <th class="text-center pe-3 pe-md-4">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody-usuarios">
+                  <tr>
+                    <td colspan="5" class="text-center py-5 text-muted">
+                      <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                      Cargando usuarios registrados...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 3. MODALES DE LA APLICACIÓN                -->
+  <!-- ========================================== -->
+
+  <!-- MODAL: REGISTRAR ENTRADA / SALIDA POR LOTE -->
+  <div class="modal fade" id="modal-movimiento-lote" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="fa-solid fa-arrow-right-arrow-left"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold" id="movimiento-modal-title">Operación por Lote</h5>
+              <small class="text-muted">Actualización inmediata en inventario</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form id="form-movimiento-lote">
+          <div class="modal-body p-4">
+            
+            <!-- Selector Tipo de Operación -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Tipo de Operación</label>
+              <div class="d-flex gap-2">
+                <input type="radio" class="btn-check" name="tipo_movimiento" id="tipo-entrada" value="ENTRADA" checked>
+                <label class="btn btn-outline-success flex-fill fw-bold py-2" for="tipo-entrada">
+                  <i class="fa-solid fa-arrow-down me-1"></i> Entrada (+)
+                </label>
+
+                <input type="radio" class="btn-check" name="tipo_movimiento" id="tipo-salida" value="SALIDA">
+                <label class="btn btn-outline-danger flex-fill fw-bold py-2" for="tipo-salida">
+                  <i class="fa-solid fa-arrow-up me-1"></i> Salida / Despacho (-)
+                </label>
+              </div>
+            </div>
+
+            <!-- Selector de Almacén -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Almacén Destino / Origen</label>
+              <select class="form-select" id="mov-id-almacen" required>
+                <option value="">Seleccione el Almacén...</option>
+              </select>
+            </div>
+
+            <!-- Selector de Producto -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Producto</label>
+              <select class="form-select" id="mov-id-producto" required>
+                <option value="">Seleccione el Producto...</option>
+              </select>
+            </div>
+
+            <!-- Número de Lote -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Número de Lote</label>
+              <input type="text" class="form-control font-monospace" id="mov-numero-lote" placeholder="Ej: LOT-2026-A1" required>
+            </div>
+
+            <!-- Fecha de Vencimiento (Obligatoria para Lote Nuevo en Entrada) -->
+            <div class="mb-3" id="campo-fecha-vencimiento">
+              <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Vencimiento</label>
+              <input type="date" class="form-control" id="mov-fecha-vencimiento">
+              <small class="text-muted" style="font-size: 0.75rem;">Requerida si el lote entra por primera vez.</small>
+            </div>
+
+            <!-- Cantidad de Unidades -->
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Cantidad de Unidades</label>
+              <input type="number" class="form-control fw-bold fs-5 text-center" id="mov-cantidad" min="1" step="1" placeholder="0" required>
+            </div>
+
+          </div>
+
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-4 fw-bold" id="btn-submit-movimiento">
+              <i class="fa-solid fa-check me-1"></i> Confirmar Operación
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREAR NUEVO PRODUCTO (EXCLUSIVO ADMIN) -->
+  <div class="modal fade solo-admin" id="modal-nuevo-producto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 bg-indigo text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background-color: #6366f1;">
+              <i class="fa-solid fa-box-open"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold">Registrar Nuevo Producto</h5>
+              <small class="text-muted">Catálogo maestro general</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form id="form-nuevo-producto">
+          <div class="modal-body p-4">
+            
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Código de Barras</label>
+              <input type="text" class="form-control font-monospace" id="prod-codigo" placeholder="Ej: 770123456789" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Nombre del Producto</label>
+              <input type="text" class="form-control" id="prod-nombre" placeholder="Ej: Acetaminofén 500mg" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Descripción</label>
+              <textarea class="form-control" id="prod-descripcion" rows="2" placeholder="Detalles o presentación"></textarea>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted text-uppercase">Precio Costo ($)</label>
+                <input type="number" class="form-control" id="prod-precio-costo" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+              <div class="col-6">
+                <label class="form-label small fw-bold text-muted text-uppercase">Precio Venta ($)</label>
+                <input type="number" class="form-control" id="prod-precio-venta" step="0.01" min="0" placeholder="0.00" required>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: #6366f1; border-color: #6366f1;">
+              <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Producto
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO USUARIO (EXCLUSIVO ADMIN) -->
+  <div class="modal fade solo-admin" id="modal-nuevo-usuario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-bottom">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-3 bg-danger text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold">Registrar Nuevo Usuario</h5>
+              <small class="text-muted">Creación de cuenta y asignación de rol</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <form id="form-nuevo-usuario">
+          <div class="modal-body p-4">
+            
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Nombre Completo</label>
+              <input type="text" class="form-control" id="usr-nombre" placeholder="Ej: Carlos Gómez" required autocomplete="off">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Correo Electrónico</label>
+              <input type="email" class="form-control" id="usr-email" placeholder="carlos@almacen.com" required autocomplete="off">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Contraseña Inicial</label>
+              <input type="password" class="form-control" id="usr-password" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-muted text-uppercase">Rol Asignado</label>
+              <select class="form-select" id="usr-rol" required>
+                <option value="">Seleccione el rol...</option>
+                <option value="2">OPERARIO (Operaciones de entrada, salida y consulta de stock)</option>
+                <option value="1">ADMIN (Control total, creación de productos y gestión)</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="modal-footer border-top bg-light">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: #4f46e5; border-color: #4f46e5;">
+              <i class="fa-solid fa-user-check me-1"></i> Guardar Usuario
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5.3.3 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Lógica de la Aplicación -->
+  <script src="app.js"></script>
+</body>
+</html>
