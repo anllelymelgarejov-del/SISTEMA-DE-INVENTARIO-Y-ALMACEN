@@ -119,6 +119,15 @@ psql -U postgres -d sis_inv_almacen -f database.sql
 ```bash
 psql -U postgres -d sis_inv_almacen -f database/migracion_simplificada.sql
 ```
+### 🗄️ Configuración de la Base de Datos (PostgreSQL)
+
+1. Abre tu cliente de base de datos (pgAdmin).
+2. Crea una base de datos llamada `sis_inv_almacen`:
+   ```sql
+   CREATE DATABASE sis_inv_almacen;
+3. Ejecuta el archivo de migracion en db/schema.sql para crear todas las tablas y datos iniciales.
+4. Configura tus credenciales de conexion en tu archivo .env local.
+
 
 ### 5. Iniciar el Servidor
 
