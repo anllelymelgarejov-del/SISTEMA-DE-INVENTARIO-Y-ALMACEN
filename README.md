@@ -105,28 +105,35 @@ JWT_SECRET=tu_clave_secreta_jwt_muy_segura_2026
 JWT_EXPIRES_IN=24h
 ```
 
-> **Nota:** Si utilizas una base de datos en la nube (como Supabase o Render), puedes configurar directamente la variable `DATABASE_URL` con tu cadena de conexión URI.
+> **Nota (nube):** Si utilizas una base de datos en la nube (como Supabase o Render), configura la variable `DATABASE_URL` con tu cadena de conexión URI.
+
+> **Nota (local):** Para usar PostgreSQL local (pgAdmin), deja `DATABASE_URL` **comentada o sin definir** y llena `DB_USER`, `DB_HOST`, `DB_NAME`, `DB_PASSWORD` y `DB_PORT`. Si defines `DATABASE_URL`, el backend la usará a ella (con SSL) en lugar de la conexión local.
 
 ### 4. Configurar la Base de Datos PostgreSQL
-Crea la base de datos en PostgreSQL y ejecuta el script de esquema inicial para generar las tablas y datos de prueba:
+Primero crea la base de datos y luego ejecuta el esquema oficial `db/schema.sql`, que crea **todas las tablas y los datos semilla** (incluidos los usuarios de acceso):
 
 ```bash
-# Accede al cliente de PostgreSQL o usa tu gestor preferido (pgAdmin / DBeaver)
-psql -U postgres -d sis_inv_almacen -f database.sql
+# 1) Crear la base de datos (si aún no existe)
+psql -U postgres -c "CREATE DATABASE sis_inv_almacen;"
+
+# 2) Ejecutar el esquema oficial (tablas + datos de prueba)
+psql -U postgres -d sis_inv_almacen -f db/schema.sql
 ```
 
-*(Opcional)* Si necesitas migrar estructuras simplificadas existentes:
-```bash
-psql -U postgres -d sis_inv_almacen -f database/migracion_simplificada.sql
-```
-### 🗄️ Configuración de la Base de Datos (PostgreSQL)
+El script es **idempotente**: puedes ejecutarlo las veces que quieras sin obtener errores.
+
+> **Nota:** `database.sql` quedó **obsoleto** (pertenecía al esquema antiguo). No lo uses: el esquema vigente es `db/schema.sql`.
+
+### 🗄️ Alternativa desde pgAdmin
 
 1. Abre tu cliente de base de datos (pgAdmin).
 2. Crea una base de datos llamada `sis_inv_almacen`:
    ```sql
    CREATE DATABASE sis_inv_almacen;
-3. Ejecuta el archivo de migracion en db/schema.sql para crear todas las tablas y datos iniciales.
-4. Configura tus credenciales de conexion en tu archivo .env local.
+   ```
+3. Clic derecho sobre la base `sis_inv_almacen` > **Query Tool**.
+4. Abre el archivo `db/schema.sql` y presiona **F5** (Run) para crear todas las tablas y datos iniciales.
+5. Configura tus credenciales de conexión en tu archivo `.env` local.
 
 
 ### 5. Iniciar el Servidor
@@ -152,7 +159,8 @@ http://localhost:3000
 
 | Rol | Correo Electrónico | Contraseña |
 | :--- | :--- | :--- |
-| **Administrador** | `admin@almacen.com` | `admin123` |
+| **Administrador** | `admin@almacen.com` | `
+` |
 | **Operario** | `operario@almacen.com` | `Operario1234!` |
 
 ---
@@ -161,9 +169,13 @@ http://localhost:3000
 
 ```text
 sistema-inventario/
-├── database/                # Scripts de migración y respaldos SQL
+├── db/                      # Esquema OFICIAL de la base de datos
+│   └── schema.sql           # Tablas + datos semilla (idempotente)
+├── database/                # Scripts históricos / alternativos (no usados por el backend actual)
 │   ├── migracion_simplificada.sql
-│   └── supabase_wms_completo.sql
+│   ├── supabase_wms_completo.sql
+│   ├── validaciones_constraints_triggers.sql
+│   └── wms_schema.sql
 ├── public/                  # Frontend estático servido por Express
 │   ├── app.js               # Controlador JS Vanilla, estado e interactividad
 │   ├── index.html           # Dashboard principal (Inventario, Historial, Gestión)
@@ -184,7 +196,7 @@ sistema-inventario/
 │   └── index.js             # Punto de entrada principal y servidor Express
 ├── .env.example             # Plantilla de variables de entorno
 ├── .gitignore               # Exclusiones para el repositorio Git
-├── database.sql             # Script SQL de creación de tablas base
+├── database.sql             # ⚠️ Obsoleto (usar db/schema.sql)
 ├── package.json             # Manifiesto de dependencias y scripts de npm
 └── README.md                # Documentación oficial del proyecto
 ```

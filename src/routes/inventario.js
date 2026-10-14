@@ -28,6 +28,7 @@ const obtenerInventario = async (req, res) => {
         p.codigo_barras AS codigo,
         p.nombre AS producto_nombre, 
         p.nombre AS producto,
+        p.descripcion, 
         l.id_lote, 
         l.numero_lote, 
         l.numero_lote AS lote,

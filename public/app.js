@@ -231,7 +231,7 @@ function renderizarTablaAlmacenActivo() {
 
   const filtrados = itemsAlmacen.filter(item => {
     if (filtroTexto) {
-      const matchNom = (item.nombre_producto || '').toLowerCase().includes(filtroTexto);
+      const matchNom = (item.producto_nombre || item.producto || '').toLowerCase().includes(filtroTexto);
       const matchCod = (item.codigo_barras || '').toLowerCase().includes(filtroTexto);
       const matchLot = (item.numero_lote || '').toLowerCase().includes(filtroTexto);
       if (!matchNom && !matchCod && !matchLot) return false;
@@ -264,7 +264,7 @@ function renderizarTablaAlmacenActivo() {
     return `
       <tr>
         <td class="ps-3 ps-md-4">
-          <div class="fw-bold text-dark">${item.nombre_producto}</div>
+          <div class="fw-bold text-dark">${item.producto_nombre || item.producto || 'N/A'}</div>
           <small class="text-muted">${item.descripcion || ''}</small>
         </td>
         <td><span class="badge bg-light text-dark font-monospace border">${item.codigo_barras || 'N/A'}</span></td>
