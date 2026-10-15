@@ -231,7 +231,7 @@ function renderizarTablaAlmacenActivo() {
 
   const filtrados = itemsAlmacen.filter(item => {
     if (filtroTexto) {
-      const matchNom = (item.nombre_producto || '').toLowerCase().includes(filtroTexto);
+      const matchNom = (item.nombre_producto || item.producto || item.producto_nombre || '').toLowerCase().includes(filtroTexto);
       const matchCod = (item.codigo_barras || '').toLowerCase().includes(filtroTexto);
       const matchLot = (item.numero_lote || '').toLowerCase().includes(filtroTexto);
       if (!matchNom && !matchCod && !matchLot) return false;
@@ -261,10 +261,11 @@ function renderizarTablaAlmacenActivo() {
   tbody.innerHTML = filtrados.map(item => {
     const badgeFefo = obtenerBadgeFefo(item.fecha_vencimiento);
     const fechaVenc = item.fecha_vencimiento ? item.fecha_vencimiento.substring(0, 10) : 'N/A';
+    const nombreProd = item.nombre_producto || item.producto || item.producto_nombre || 'N/A';
     return `
       <tr>
         <td class="ps-3 ps-md-4">
-          <div class="fw-bold text-dark">${item.nombre_producto}</div>
+          <div class="fw-bold text-dark">${nombreProd}</div>
           <small class="text-muted">${item.descripcion || ''}</small>
         </td>
         <td><span class="badge bg-light text-dark font-monospace border">${item.codigo_barras || 'N/A'}</span></td>

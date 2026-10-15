@@ -22,8 +22,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos del frontend desde la carpeta 'public'
-app.use(express.static(path.join(__dirname, '../public')));
+// Servir archivos estáticos del frontend desde la carpeta 'frontend'
+app.use(express.static(path.join(__dirname, '../../frontend')));
 
 // ==============================================================================
 // 2. REGISTRO DE RUTAS DE LA API
