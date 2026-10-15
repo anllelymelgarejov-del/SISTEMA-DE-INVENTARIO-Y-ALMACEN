@@ -424,30 +424,99 @@ async function cargarUsuarios() {
     const usuarios = res.usuarios || res.data || [];
 
     if (usuarios.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No hay usuarios registrados.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No hay usuarios registrados.</td></tr>';
       return;
     }
 
-    tbody.innerHTML = usuarios.map(u => `
-      <tr>
-        <td class="ps-3 ps-md-4 font-monospace fw-bold text-secondary">#${u.id_usuario}</td>
-        <td class="fw-semibold text-dark">${u.nombre}</td>
-        <td class="font-monospace text-muted">${u.email}</td>
-        <td class="text-center">
-          <span class="badge ${u.rol === 'ADMIN' ? 'bg-danger' : 'bg-success'} py-1 px-2.5 rounded-pill">
-            ${u.rol || 'OPERARIO'}
-          </span>
-        </td>
-        <td class="text-center pe-3 pe-md-4">
-          <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 rounded-pill">Activo</span>
-        </td>
-      </tr>
-    `).join('');
+    tbody.innerHTML = usuarios.map(u => {
+      const esAdminPrincipal = Number(u.id_usuario) === 1 || u.email === 'admin@almacen.com';
+      return `
+        <tr>
+          <td class="ps-3 ps-md-4 font-monospace fw-bold text-secondary">#${u.id_usuario}</td>
+          <td class="fw-semibold text-dark">${u.nombre}</td>
+          <td class="font-monospace text-muted">${u.email}</td>
+          <td class="text-center">
+            <span class="badge ${u.rol === 'ADMIN' ? 'bg-danger' : 'bg-success'} py-1 px-2.5 rounded-pill">
+              ${u.rol || 'OPERARIO'}
+            </span>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 rounded-pill">Activo</span>
+          </td>
+          <td class="text-center pe-3 pe-md-4">
+            ${esAdminPrincipal 
+              ? `<span class="badge bg-secondary-subtle text-secondary border px-2 py-1 small" title="Administrador Principal protegido">
+                   <i class="fa-solid fa-lock me-1"></i> Protegido
+                 </span>`
+              : `<button class="btn btn-sm btn-outline-danger px-2.5 py-1 rounded-2 shadow-xs d-inline-flex align-items-center gap-1" 
+                         onclick="eliminarUsuario(${u.id_usuario})" 
+                         title="Eliminar usuario">
+                   <i class="fa-solid fa-trash"></i>
+                   <span>Eliminar</span>
+                 </button>`
+            }
+          </td>
+        </tr>
+      `;
+    }).join('');
   } catch (error) {
     console.error('Error al cargar usuarios:', error);
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger">Error: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Error: ${error.message}</td></tr>`;
   }
 }
+
+/**
+ * Elimina un usuario por ID consumiendo DELETE /api/usuarios/:id
+ * Solicita confirmación nativa al usuario antes de proceder.
+ */
+async function eliminarUsuario(idUsuario) {
+  const idNum = parseInt(idUsuario, 10);
+  if (isNaN(idNum) || idNum === 1) {
+    alert('El usuario Administrador principal no puede ser eliminado.');
+    return;
+  }
+
+  // 1. Confirmación nativa exigida
+  const confirmacion = confirm('¿Estás seguro de eliminar este usuario?');
+  if (!confirmacion) return;
+
+  try {
+    // 2. Consumir endpoint DELETE del backend
+    const res = await fetchAutenticado(`/api/usuarios/${idNum}`, {
+      method: 'DELETE',
+    });
+
+    if (res.exito || res.success) {
+      if (typeof Swal !== 'undefined') {
+        Swal.fire({
+          icon: 'success',
+          title: 'Usuario Eliminado',
+          text: res.mensaje || 'El usuario ha sido eliminado correctamente.',
+          timer: 1600,
+          showConfirmButton: false,
+        });
+      }
+      // 3. Actualizar dinámicamente la tabla sin recargar la página
+      await cargarUsuarios();
+    } else {
+      throw new Error(res.mensaje || 'No se pudo eliminar el usuario.');
+    }
+  } catch (error) {
+    console.error('Error al eliminar usuario:', error);
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || 'No se pudo completar la eliminación del usuario.',
+      });
+    } else {
+      alert('Error: ' + error.message);
+    }
+  }
+}
+
+// Exponer la función al ámbito global para los botones con onclick
+window.eliminarUsuario = eliminarUsuario;
 
 // ============================================================================
 // 6. MODALES Y FORMULARIOS

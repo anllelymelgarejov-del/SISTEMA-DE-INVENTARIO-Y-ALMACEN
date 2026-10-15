@@ -21,9 +21,14 @@ router.get('/', verificarToken, verificarRol('ADMIN'), async (req, res) => {
         u.nombre, 
         u.email, 
         u.id_rol, 
-        COALESCE(r.nombre, 'OPERARIO') AS rol 
+        CASE 
+          WHEN u.id_rol = 1 THEN 'ADMIN' 
+          WHEN u.id_rol = 2 THEN 'OPERARIO' 
+          ELSE 'OPERARIO' 
+        END AS rol 
       FROM usuarios u 
       LEFT JOIN roles r ON u.id_rol = r.id_rol 
+      WHERE u.id_rol IN (1, 2)
       ORDER BY u.id_usuario ASC;
     `;
 
@@ -64,7 +69,14 @@ router.post('/', verificarToken, verificarRol('ADMIN'), async (req, res) => {
     const emailLimpio = String(email).trim().toLowerCase();
     const nombreLimpio = String(nombre).trim();
     const passLimpia = String(password).trim();
-    const rolIdNum = parseInt(id_rol, 10) || 2; // Por defecto 2: OPERARIO
+    const rolIdNum = parseInt(id_rol, 10);
+    if (![1, 2].includes(rolIdNum)) {
+      return res.status(400).json({
+        exito: false,
+        success: false,
+        mensaje: 'Rol inválido. Los únicos roles permitidos en el sistema son Administrador (1) y Operario (2).',
+      });
+    }
 
     if (passLimpia.length < 4) {
       return res.status(400).json({
@@ -126,6 +138,85 @@ router.post('/', verificarToken, verificarRol('ADMIN'), async (req, res) => {
       mensaje: 'Error de Servidor: ' + error.message,
       error: error.message,
     });
+  }
+});
+
+// 3. DELETE /api/usuarios/:id - Eliminar usuario del sistema (Exclusivo ADMIN)
+router.delete('/:id', verificarToken, verificarRol('ADMIN'), async (req, res) => {
+  const client = await pool.connect();
+  try {
+    const idUsuario = parseInt(req.params.id, 10);
+
+    if (isNaN(idUsuario) || idUsuario <= 0) {
+      return res.status(400).json({
+        exito: false,
+        success: false,
+        mensaje: 'ID de usuario inválido.',
+      });
+    }
+
+    // RESTRICCIÓN DE SEGURIDAD: Prohibido eliminar al administrador principal (ID 1)
+    if (idUsuario === 1) {
+      return res.status(400).json({
+        exito: false,
+        success: false,
+        mensaje: 'Acción no permitida: El usuario Administrador principal (ID 1) no puede ser eliminado del sistema.',
+      });
+    }
+
+    // Verificar existencia del usuario y validar por correo institucional
+    const resBusqueda = await client.query(
+      'SELECT id_usuario, nombre, email, id_rol FROM usuarios WHERE id_usuario = $1',
+      [idUsuario]
+    );
+
+    if (resBusqueda.rows.length === 0) {
+      return res.status(404).json({
+        exito: false,
+        success: false,
+        mensaje: `El usuario con ID ${idUsuario} no existe en el sistema.`,
+      });
+    }
+
+    const usuarioAEliminar = resBusqueda.rows[0];
+
+    // Doble verificación: El correo del administrador principal no puede ser eliminado
+    if (usuarioAEliminar.email && usuarioAEliminar.email.toLowerCase() === 'admin@almacen.com') {
+      return res.status(400).json({
+        exito: false,
+        success: false,
+        mensaje: 'Acción no permitida: La cuenta principal del Administrador (admin@almacen.com) no puede ser eliminada.',
+      });
+    }
+
+    await client.query('BEGIN');
+
+    // Preservar trazabilidad del Kardex reasignando movimientos históricos al administrador principal
+    await client.query('UPDATE movimientos SET id_usuario = 1 WHERE id_usuario = $1', [idUsuario]);
+
+    // Ejecutar eliminación directa del usuario
+    await client.query('DELETE FROM usuarios WHERE id_usuario = $1', [idUsuario]);
+
+    await client.query('COMMIT');
+
+    return res.status(200).json({
+      exito: true,
+      success: true,
+      mensaje: `Usuario '${usuarioAEliminar.nombre}' eliminado correctamente.`,
+      id_usuario: idUsuario,
+    });
+
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    console.error('Error al eliminar usuario:', error);
+    return res.status(500).json({
+      exito: false,
+      success: false,
+      mensaje: 'Error de Servidor al eliminar usuario: ' + error.message,
+      error: error.message,
+    });
+  } finally {
+    client.release();
   }
 });
 

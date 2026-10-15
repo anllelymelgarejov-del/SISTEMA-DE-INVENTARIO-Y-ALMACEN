@@ -48,8 +48,9 @@ const verificarToken = (req, res, next) => {
 
 /**
  * Middleware para verificar permisos por rol (Control de Acceso Basado en Roles - RBAC).
- * Permite pasar un array de roles o argumentos separados:
- * Ejemplo: verificarRol(['ADMIN', 'JEFE_ALMACEN']) o verificarRol('ADMIN', 'JEFE_ALMACEN')
+ * Permite pasar un array de roles o argumentos separados.
+ * Roles válidos en el sistema: 'ADMIN' (Administrador) y 'OPERARIO' (Operario).
+ * Ejemplo: verificarRol(['ADMIN', 'OPERARIO']) o verificarRol('ADMIN')
  */
 const verificarRol = (...rolesPermitidos) => {
   // Aplanar argumentos en caso de que se pase un arreglo o strings individuales

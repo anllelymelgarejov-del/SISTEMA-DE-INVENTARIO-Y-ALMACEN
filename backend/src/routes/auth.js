@@ -68,8 +68,19 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // 5. Mapeo de Rol (id_rol 1 = ADMIN, otros = OPERARIO)
-    const rol = (usuario.id_rol === 1) ? 'ADMIN' : 'OPERARIO';
+    // 5. Restricción Estricta de Roles: Exclusivamente Administrador (1) y Operario (2)
+    let rol = null;
+    if (usuario.id_rol === 1) {
+      rol = 'ADMIN';
+    } else if (usuario.id_rol === 2) {
+      rol = 'OPERARIO';
+    } else {
+      return res.status(403).json({
+        exito: false,
+        success: false,
+        mensaje: 'Acceso denegado: El usuario no cuenta con un rol institucional válido (Administrador u Operario).',
+      });
+    }
 
     // 6. Generación de Token JWT
     const secret = process.env.JWT_SECRET || 'wms_secret_fallback_key';

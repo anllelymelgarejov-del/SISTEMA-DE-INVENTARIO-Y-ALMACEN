@@ -12,13 +12,13 @@
 --   ERROR: no existe la columna «fecha_movimiento»
 --
 -- ✅ El esquema correcto y completo (tablas + datos semilla) está en:
---        db/schema.sql
+--        database/script_definitivo.sql
 --
 -- Ejecuta:
---        psql -U postgres -d sis_inv_almacen -f db/schema.sql
+--        psql -U postgres -d sis_inv_almacen -f database/script_definitivo.sql
 -- ==============================================================================
 
 DO $$
 BEGIN
-    RAISE NOTICE 'database.sql está OBSOLETO. Usa db/schema.sql para crear el esquema correcto.';
+    RAISE NOTICE 'database.sql está OBSOLETO. Usa database/script_definitivo.sql para crear el esquema correcto.';
 END $$;
