@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Acceso al Sistema WMS - Control de Almacenes</title>
+  <title>Acceso al Sistema WMS - Control Corporativo de Almacenes</title>
   
   <!-- Bootstrap 5.3.3 CSS CDN -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   
   <!-- Font Awesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -22,26 +22,412 @@
   <style>
     body {
       font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      background-color: #060b16;
+      /* Degradado de azul cobalto profundo superior a azul noche / gris oscuro inferior + Halos de luz */
+      background-image:
+        radial-gradient(circle at 50% 12%, rgba(56, 189, 248, 0.18) 0%, transparent 48%),
+        radial-gradient(circle at 15% 28%, rgba(37, 99, 235, 0.28) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(14, 165, 233, 0.14) 0%, transparent 45%),
+        linear-gradient(180deg, #173679 0%, #0e214d 38%, #09142e 74%, #060b16 100%);
+      background-attachment: fixed;
       min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+      position: relative;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
     }
+
+    /* Patrón geométrico isométrico de cubos de almacén y líneas de flujo logístico */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='104' viewBox='0 0 120 104'%3E%3Cg fill='none' stroke='%2360a5fa' stroke-width='1'%3E%3C!-- Cubo isométrico logístico --%3E%3Cpath stroke-opacity='0.14' d='M60 10 L96 31 L96 73 L60 94 L24 73 L24 31 Z'/%3E%3Cpath stroke-opacity='0.11' d='M24 31 L60 52 L96 31 M60 52 L60 94'/%3E%3C!-- Líneas de flujo logístico --%3E%3Cpath stroke='%2338bdf8' stroke-opacity='0.12' stroke-dasharray='3 4' d='M0 52 L24 31 M96 31 L120 52 M60 0 L60 10 M60 94 L60 104'/%3E%3C!-- Nodos de intersección --%3E%3Ccircle cx='60' cy='10' r='2' fill='%2338bdf8' fill-opacity='0.38' stroke='none'/%3E%3Ccircle cx='60' cy='52' r='2.4' fill='%2360a5fa' fill-opacity='0.45' stroke='none'/%3E%3Ccircle cx='24' cy='31' r='1.6' fill='%2393c5fd' fill-opacity='0.3' stroke='none'/%3E%3Ccircle cx='96' cy='31' r='1.6' fill='%2393c5fd' fill-opacity='0.3' stroke='none'/%3E%3Ccircle cx='60' cy='94' r='1.8' fill='%2338bdf8' fill-opacity='0.32' stroke='none'/%3E%3C/g%3E%3C/svg%3E");
+      background-size: 120px 104px;
+      background-position: center center;
+      mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.35) 100%);
+      -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.95) 20%, rgba(0, 0, 0, 0.35) 100%);
+    }
+
+    /* Partículas y nodos de luz flotantes con efecto de profundidad tecnológica */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image:
+        radial-gradient(2.5px 2.5px at 14% 22%, rgba(125, 211, 252, 0.75) 50%, transparent 100%),
+        radial-gradient(2px 2px at 28% 68%, rgba(96, 165, 250, 0.65) 50%, transparent 100%),
+        radial-gradient(3px 3px at 76% 18%, rgba(56, 189, 248, 0.7) 50%, transparent 100%),
+        radial-gradient(2px 2px at 84% 58%, rgba(147, 197, 253, 0.65) 50%, transparent 100%),
+        radial-gradient(2.5px 2.5px at 64% 82%, rgba(56, 189, 248, 0.6) 50%, transparent 100%),
+        radial-gradient(2px 2px at 36% 14%, rgba(186, 230, 253, 0.6) 50%, transparent 100%);
+      animation: wmsNodesPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes wmsNodesPulse {
+      0% {
+        opacity: 0.55;
+        transform: translateY(0px) scale(1);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(-8px) scale(1.02);
+      }
+    }
+
+    body > .container {
+      position: relative;
+      z-index: 1;
+    }
+
+    h1, h2, h3, h4, h5 {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    /* ==========================================================================
+       TARJETA DE ACCESO EJECUTIVA (LOGIN BOX REDISEÑADA)
+       ========================================================================== */
     .login-card {
-      background: #ffffff;
-      border-radius: 1.25rem;
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 1.25rem; /* 20px */
+      border: 1px solid rgba(226, 232, 240, 0.92);
+      box-shadow:
+        0 35px 70px -15px rgba(2, 6, 23, 0.68),
+        0 18px 36px -18px rgba(15, 23, 42, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.16),
+        inset 0 1px 0 0 #ffffff;
       overflow: hidden;
-      max-width: 420px;
+      max-width: 440px;
       width: 100%;
+      position: relative;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
     }
+
+    /* Sutil borde superior con gradiente luminoso tridimensional */
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 50%, #2563eb 100%);
+      box-shadow: 0 2px 14px rgba(56, 189, 248, 0.55);
+      z-index: 2;
+    }
+
     .login-header {
-      background: #f8fafc;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.07) 0%, transparent 70%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
       border-bottom: 1px solid #e2e8f0;
-      padding: 2.25rem 2rem 1.75rem;
+      padding: 2.5rem 2rem 1.75rem;
       text-align: center;
+      position: relative;
+    }
+
+    /* Contenedor del icono principal con degradado sofisticado y relieve 3D */
+    .brand-logo-badge {
+      width: 66px;
+      height: 66px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0284c7 100%);
+      border-radius: 1.2rem;
+      border: 1px solid rgba(147, 197, 253, 0.55);
+      box-shadow:
+        0 14px 28px -6px rgba(29, 78, 216, 0.5),
+        0 0 0 6px rgba(37, 99, 235, 0.08),
+        inset 0 2px 2px rgba(255, 255, 255, 0.42),
+        inset 0 -2px 4px rgba(15, 23, 42, 0.35);
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .login-card:hover .brand-logo-badge {
+      transform: translateY(-2px) scale(1.03);
+    }
+
+    .role-preview-pills {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 0.95rem;
+    }
+
+    .role-pill-admin {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.28rem 0.72rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 1px 2px rgba(29, 78, 216, 0.08);
+    }
+
+    .role-pill-operario {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 0.28rem 0.72rem;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: #047857;
+      border: 1px solid #a7f3d0;
+      box-shadow: 0 1px 2px rgba(4, 120, 87, 0.08);
+    }
+
+    /* Campos de Entrada (Inputs) unificados con transición de foco ejecutiva */
+    #form-login .input-group {
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.85rem;
+      background-color: #f8fafc;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #form-login .input-group:focus-within {
+      background-color: #ffffff;
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.15),
+        0 4px 12px -2px rgba(37, 99, 235, 0.08);
+      transform: translateY(-1px);
+    }
+
+    #form-login .input-group-text {
+      border: none !important;
+      background-color: transparent !important;
+      color: #64748b !important;
+      padding-left: 1rem;
+      padding-right: 0.65rem;
+      transition: color 0.2s ease;
+    }
+
+    #form-login .input-group:focus-within .input-group-text {
+      color: #2563eb !important;
+    }
+
+    #form-login .form-control {
+      border: none !important;
+      background-color: transparent !important;
+      padding: 0.78rem 0.9rem 0.78rem 0.2rem;
+      font-size: 0.94rem;
+      font-weight: 500;
+      color: #0f172a;
+      box-shadow: none !important;
+    }
+
+    #form-login .form-control::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    #btn-toggle-password {
+      border: none !important;
+      background-color: transparent !important;
+      color: #64748b !important;
+      padding: 0 1rem;
+      transition: color 0.2s ease;
+    }
+
+    #btn-toggle-password:hover {
+      color: #1d4ed8 !important;
+    }
+
+    /* Botón Principal ("Ingresar al Sistema") con degradado azul profundo y elevación */
+    #btn-submit-login {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%) !important;
+      border: 1px solid rgba(147, 197, 253, 0.35) !important;
+      border-radius: 0.875rem !important;
+      padding: 0.82rem 1.35rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.95rem;
+      letter-spacing: 0.01em;
+      box-shadow:
+        0 10px 24px -6px rgba(29, 78, 216, 0.52),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      transition: all 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #btn-submit-login:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%) !important;
+      box-shadow:
+        0 14px 30px -6px rgba(37, 99, 235, 0.65),
+        0 0 16px rgba(59, 130, 246, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.38);
+    }
+
+    #btn-submit-login:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    /* ==========================================================================
+       MODAL DE BIENVENIDA (SWEETALERT2 CUSTOM UI/UX REDESIGN)
+       ========================================================================== */
+    /* Fondo oscurecido con desenfoque de cristal (Backdrop) */
+    .swal2-container.swal2-backdrop-show {
+      background: rgba(6, 11, 22, 0.68) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+    }
+
+    /* Contenedor principal de la tarjeta emergente */
+    .swal2-popup.swal2-modal {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-radius: 20px !important;
+      border: 1px solid rgba(226, 232, 240, 0.9) !important;
+      padding: 2.25rem 2rem 2.35rem !important;
+      max-width: 400px !important;
+      width: 92% !important;
+      box-shadow:
+        0 30px 60px -12px rgba(2, 6, 23, 0.6),
+        0 18px 36px -18px rgba(15, 23, 42, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+        0 0 40px rgba(16, 185, 129, 0.1) !important;
+      position: relative !important;
+      overflow: hidden !important;
+    }
+
+    /* Línea superior decorativa de acento luminoso */
+    .swal2-popup.swal2-modal::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #059669 0%, #10b981 50%, #34d399 100%);
+      box-shadow: 0 2px 12px rgba(16, 185, 129, 0.45);
+      z-index: 3;
+    }
+
+    /* Barra de progreso inferior sutil sincronizada con la redirección (1.4s) */
+    .swal2-popup.swal2-modal::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981 0%, #059669 55%, #2563eb 100%);
+      transform-origin: left center;
+      animation: swalWelcomeProgress 1.4s cubic-bezier(0.35, 0, 0.25, 1) forwards;
+      z-index: 3;
+    }
+
+    /* Transición de aparición suave (fade-in + zoom sutil) */
+    .swal2-popup.swal2-show {
+      animation: swalWelcomeEnter 0.38s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    }
+
+    @keyframes swalWelcomeEnter {
+      0% {
+        opacity: 0;
+        transform: scale(0.92) translateY(10px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    @keyframes swalWelcomeProgress {
+      0% {
+        transform: scaleX(0);
+      }
+      100% {
+        transform: scaleX(1);
+      }
+    }
+
+    /* Círculo del icono de verificación (Check) con fondo verde suave y pulso elegante */
+    .swal2-icon.swal2-success {
+      border-color: rgba(16, 185, 129, 0.3) !important;
+      border-radius: 50% !important;
+      background: radial-gradient(circle at 50% 35%, rgba(209, 250, 229, 0.92) 0%, rgba(16, 185, 129, 0.18) 100%) !important;
+      box-shadow:
+        0 12px 24px -6px rgba(5, 150, 105, 0.25),
+        0 0 0 8px rgba(16, 185, 129, 0.08),
+        inset 0 2px 4px rgba(255, 255, 255, 0.85) !important;
+      margin: 0.25rem auto 1.35rem !important;
+      animation: swalCheckPulse 1.6s ease-in-out infinite alternate !important;
+    }
+
+    /* Ocultar máscaras blancas por defecto de SweetAlert2 para preservar el fondo verde suave */
+    .swal2-icon.swal2-success .swal2-success-circular-line-left,
+    .swal2-icon.swal2-success .swal2-success-circular-line-right,
+    .swal2-icon.swal2-success .swal2-success-fix {
+      background-color: transparent !important;
+      display: none !important;
+    }
+
+    /* Anillo perimetral del check */
+    .swal2-icon.swal2-success .swal2-success-ring {
+      border: 0.25em solid rgba(16, 185, 129, 0.35) !important;
+    }
+
+    /* Trazos del check en verde esmeralda intenso */
+    .swal2-icon.swal2-success [class^='swal2-success-line'] {
+      background-color: #059669 !important;
+      border-radius: 999px !important;
+      box-shadow: 0 1px 3px rgba(5, 150, 105, 0.3) !important;
+    }
+
+    @keyframes swalCheckPulse {
+      0% {
+        box-shadow:
+          0 10px 22px -6px rgba(5, 150, 105, 0.24),
+          0 0 0 6px rgba(16, 185, 129, 0.08),
+          inset 0 2px 4px rgba(255, 255, 255, 0.85);
+        transform: scale(1);
+      }
+      100% {
+        box-shadow:
+          0 14px 28px -4px rgba(5, 150, 105, 0.35),
+          0 0 0 12px rgba(16, 185, 129, 0.14),
+          inset 0 2px 4px rgba(255, 255, 255, 0.95);
+        transform: scale(1.03);
+      }
+    }
+
+    /* Tipografía principal: "¡Bienvenido, Administrador!" */
+    .swal2-title {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+      font-size: 1.45rem !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.025em !important;
+      line-height: 1.25 !important;
+      color: #0f172a !important;
+      padding: 0 0.5rem !important;
+      margin: 0 0 0.6rem 0 !important;
+    }
+
+    /* Subtítulo secundario: "Rol: ADMIN. Redirigiendo al panel principal..." */
+    .swal2-html-container {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 0.88rem !important;
+      font-weight: 500 !important;
+      line-height: 1.5 !important;
+      color: #475569 !important;
+      background: #f1f5f9 !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      padding: 0.65rem 1rem !important;
+      margin: 0.25rem auto 0 !important;
+      display: inline-block !important;
+      max-width: 95% !important;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03) !important;
     }
   </style>
 </head>
@@ -54,26 +440,30 @@
         <div class="login-card mx-auto">
           <!-- Cabecera de la Tarjeta -->
           <div class="login-header">
-            <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-4 shadow-sm mb-3" style="width: 58px; height: 58px; background: linear-gradient(135deg, #4f46e5, #4338ca) !important;">
+            <div class="d-inline-flex align-items-center justify-content-center text-white mb-3 brand-logo-badge">
               <i class="fa-solid fa-boxes-stacked fs-3"></i>
             </div>
-            <h3 class="fw-bold text-dark mb-1">Sistema WMS</h3>
-            <p class="text-muted small mb-0">Gestión de Almacenes, Lotes y Control de Stock</p>
+            <h3 class="fw-bold text-dark mb-1">Sistema WMS Pro</h3>
+            <p class="text-muted small mb-0">Plataforma de Almacenes, Lotes y Control FEFO</p>
+            <div class="role-preview-pills">
+              <span class="role-pill-admin"><i class="fa-solid fa-shield-halved me-1"></i>Suite Admin</span>
+              <span class="role-pill-operario"><i class="fa-solid fa-bolt me-1"></i>Terminal Operario</span>
+            </div>
           </div>
 
           <!-- Cuerpo del Formulario de Autenticación -->
           <div class="p-4 p-sm-4">
             
-            <div id="login-alert" class="alert alert-danger d-none py-2 small" role="alert"></div>
+            <div id="login-alert" class="alert alert-danger d-none py-2 small rounded-3" role="alert"></div>
 
             <form id="form-login" autocomplete="off">
               <!-- Campo: Correo Electrónico -->
               <div class="mb-3">
                 <label for="login-email" class="form-label small fw-semibold text-secondary">
-                  Correo Electrónico
+                  Correo Electrónico Corporativo
                 </label>
                 <div class="input-group">
-                  <span class="input-group-text bg-light text-muted border-end-0">
+                  <span class="input-group-text text-muted border-end-0">
                     <i class="fa-solid fa-envelope"></i>
                   </span>
                   <input 
@@ -90,16 +480,11 @@
               <div class="mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                   <label for="login-password" class="form-label small fw-semibold text-secondary mb-0">
-                    Contraseña
+                    Contraseña de Acceso
                   </label>
-                  <!-- Enlace opcional de recuperación (deshabilitado en producción)
-                  <a href="#" class="small text-primary text-decoration-none fw-medium" tabindex="-1">
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                  -->
                 </div>
                 <div class="input-group">
-                  <span class="input-group-text bg-light text-muted border-end-0">
+                  <span class="input-group-text text-muted border-end-0">
                     <i class="fa-solid fa-lock"></i>
                   </span>
                   <input 
@@ -116,7 +501,7 @@
               </div>
 
               <!-- Botón de Envío -->
-              <button type="submit" id="btn-submit-login" class="btn btn-primary w-100 py-2.5 fw-semibold rounded-3 shadow-sm d-flex align-items-center justify-content-center gap-2" style="background: #4f46e5; border-color: #4f46e5;">
+              <button type="submit" id="btn-submit-login" class="btn btn-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2">
                 <i class="fa-solid fa-right-to-bracket"></i>
                 <span>Ingresar al Sistema</span>
               </button>

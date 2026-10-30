@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Inventario / WMS - Control Simplificado</title>
+  <title>Sistema de Inventario / WMS - Plataforma Corporativa</title>
 
-  <!-- Google Fonts: Inter -->
+  <!-- Google Fonts: Plus Jakarta Sans, Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
   <!-- Bootstrap 5.3.3 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -20,84 +20,1803 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
   <style>
+    /* ==========================================================================
+       1. VARIABLES GLOBALES Y SISTEMA DE DISEÑO (DESIGN TOKENS)
+       ========================================================================== */
     :root {
-      --inv-primary: #4f46e5;
-      --inv-primary-hover: #4338ca;
+      /* Tokens Base (Default / Neutral Corporate) */
+      --inv-primary: #1d4ed8;
+      --inv-primary-hover: #1e40af;
+      --inv-primary-light: #eff6ff;
+      --inv-accent: #0ea5e9;
       --inv-surface: #ffffff;
-      --inv-bg: #f8fafc;
+      --inv-surface-elevated: #f8fafc;
+      --inv-bg: #f1f5f9;
       --inv-border: #e2e8f0;
-      --inv-text: #1e293b;
+      --inv-border-strong: #cbd5e1;
+      --inv-text: #0f172a;
+      --inv-text-secondary: #334155;
       --inv-text-muted: #64748b;
+
+      /* Navbar Default */
+      --inv-navbar-bg: linear-gradient(135deg, #090d16 0%, #0f172a 55%, #1e3a8a 100%);
+      --inv-navbar-border: rgba(56, 189, 248, 0.2);
+      --inv-brand-badge: linear-gradient(135deg, #2563eb 0%, #0284c7 100%);
+
+      /* Sombras Multicapa Corporativas */
+      --inv-shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+      --inv-shadow-sm: 0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 1px 3px -1px rgba(15, 23, 42, 0.04);
+      --inv-shadow-md: 0 10px 25px -5px rgba(15, 23, 42, 0.07), 0 4px 10px -3px rgba(15, 23, 42, 0.04);
+      --inv-shadow-lg: 0 20px 35px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -6px rgba(15, 23, 42, 0.06);
+
+      /* Radios y Transiciones */
+      --inv-radius-sm: 0.625rem;
+      --inv-radius-md: 0.875rem;
+      --inv-radius-lg: 1.125rem;
+      --inv-radius-xl: 1.375rem;
+      --inv-transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
+    /* ==========================================================================
+       2. DIFERENCIACIÓN AUTOMÁTICA DE TEMA POR ROL (CSS :has SIN TOCAR JS)
+       ========================================================================== */
+
+    /* --- TEMA EJECUTIVO ADMINISTRADOR (Cobalto / Zafiro / Oscuro Sobrio) --- */
+    body:has(#user-rol.bg-danger) {
+      --inv-primary: #1d4ed8;
+      --inv-primary-hover: #1e3a8a;
+      --inv-primary-light: #eff6ff;
+      --inv-accent: #38bdf8;
+      --inv-bg: #eef2f6;
+      --inv-navbar-bg: linear-gradient(135deg, #070b14 0%, #0f172a 50%, #172554 100%);
+      --inv-navbar-border: rgba(56, 189, 248, 0.28);
+      --inv-brand-badge: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    }
+
+    /* --- TEMA ÁGIL OPERARIO (Esmeralda / Teal Dinámico / Fresco y Luminoso) --- */
+    body:has(#user-rol.bg-success) {
+      --inv-primary: #0d9488;
+      --inv-primary-hover: #0f766e;
+      --inv-primary-light: #f0fdfa;
+      --inv-accent: #10b981;
+      --inv-bg: #f0fdf9;
+      --inv-navbar-bg: linear-gradient(135deg, #064e3b 0%, #0f766e 55%, #0d9488 100%);
+      --inv-navbar-border: rgba(110, 231, 183, 0.3);
+      --inv-brand-badge: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    /* ==========================================================================
+       3. ESTILOS BASE, FONDO GENERAL CON OVERLAY Y TIPOGRAFÍA
+       ========================================================================== */
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--inv-bg);
+      background-color: #0b1120;
+      /* Superposición oscura (87% - 90% opacidad) + Imagen de estanterías de almacén/farmacia */
+      background-image:
+        linear-gradient(135deg, rgba(10, 15, 29, 0.88) 0%, rgba(15, 23, 42, 0.86) 50%, rgba(17, 24, 39, 0.90) 100%),
+        url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1920&q=85');
+      background-size: cover;
+      background-position: center center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
       color: var(--inv-text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Navbar Estilizada */
+    body:has(#user-rol.bg-success) {
+      background-image:
+        linear-gradient(135deg, rgba(6, 34, 29, 0.86) 0%, rgba(15, 23, 42, 0.87) 55%, rgba(9, 29, 26, 0.90) 100%),
+        url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1920&q=85');
+    }
+
+    h1, h2, h3, h4, h5, h6, .navbar-brand, .exec-title, .op-card-title {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .font-monospace {
+      font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* ==========================================================================
+       4. NAVBAR SUPERIOR CORPORATIVO Y CONTENEDOR DE TÍTULO
+       ========================================================================== */
     .inv-navbar {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: linear-gradient(135deg, #060d24 0%, #0f2557 52%, #1e40af 100%);
+      border-bottom: 1px solid rgba(96, 165, 250, 0.42);
+      box-shadow:
+        0 10px 30px -6px rgba(2, 6, 23, 0.65),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+      padding-top: 0.75rem;
+      padding-bottom: 0.75rem;
+      backdrop-filter: blur(16px);
+      transition: var(--inv-transition);
     }
 
-    /* Pestañas de Almacén */
-    .nav-pills .nav-link {
-      color: #64748b;
-      font-weight: 600;
-      border-radius: 0.75rem;
-      padding: 0.75rem 1.25rem;
-      transition: all 0.2s ease;
-    }
-    .nav-pills .nav-link:hover {
-      color: var(--inv-primary);
-      background-color: #f1f5f9;
-    }
-    .nav-pills .nav-link.active {
-      background: linear-gradient(135deg, #4f46e5, #4338ca);
-      color: #ffffff;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    body:has(#user-rol.bg-success) .inv-navbar {
+      background: linear-gradient(135deg, #042f2e 0%, #0f514c 52%, #0d9488 100%);
+      border-bottom: 1px solid rgba(110, 231, 183, 0.42);
     }
 
-    /* Semáforo de Caducidad */
-    .badge-fefo-critico {
-      background-color: #fee2e2;
-      color: #b91c1c;
-      border: 1px solid #fecaca;
-    }
-    .badge-fefo-proximo {
-      background-color: #fef3c7;
-      color: #b45309;
-      border: 1px solid #fde68a;
-    }
-    .badge-fefo-optimo {
-      background-color: #dcfce7;
-      color: #15803d;
-      border: 1px solid #bbf7d0;
-    }
-    .badge-fefo-vencido {
-      background-color: #1e293b;
-      color: #ffffff;
-    }
-
-    .modal-content {
+    .brand-capsule {
+      background: linear-gradient(135deg, rgba(30, 58, 138, 0.65) 0%, rgba(15, 23, 42, 0.55) 100%);
+      border: 1px solid rgba(147, 197, 253, 0.35);
       border-radius: 1rem;
-      border: 1px solid var(--inv-border);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      padding: 0.42rem 0.95rem 0.42rem 0.5rem;
+      box-shadow:
+        0 4px 16px rgba(15, 23, 42, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      transition: var(--inv-transition);
+    }
+
+    body:has(#user-rol.bg-success) .brand-capsule {
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.65) 0%, rgba(15, 23, 42, 0.5) 100%);
+      border-color: rgba(110, 231, 183, 0.38);
+    }
+
+    .brand-capsule:hover {
+      border-color: rgba(191, 219, 254, 0.65);
+      box-shadow:
+        0 6px 20px rgba(37, 99, 235, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .brand-icon-box {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+      border-radius: 0.75rem;
+      border: 1px solid rgba(191, 219, 254, 0.5);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      transition: var(--inv-transition);
+    }
+
+    body:has(#user-rol.bg-success) .brand-icon-box {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border-color: rgba(167, 243, 208, 0.5);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    }
+
+    .brand-title-text {
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      background: linear-gradient(90deg, #ffffff 0%, #e0f2fe 60%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .brand-subtitle-text {
+      color: #cbd5e1;
+      font-size: 0.73rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+    }
+
+    /* Botones de cabecera */
+    #btn-nuevo-producto-nav {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      border: 1px solid rgba(147, 197, 253, 0.35) !important;
+      font-weight: 600;
+      padding: 0.5rem 1rem !important;
+      border-radius: 0.75rem !important;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+      transition: var(--inv-transition);
+    }
+    #btn-nuevo-producto-nav:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.45);
+      filter: brightness(1.06);
+    }
+
+    #btn-movimiento-nav {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      color: #f8fafc;
+      font-weight: 600;
+      padding: 0.5rem 1rem !important;
+      border-radius: 0.75rem !important;
+      backdrop-filter: blur(6px);
+      transition: var(--inv-transition);
+    }
+    #btn-movimiento-nav:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.45);
+      transform: translateY(-2px);
+      color: #ffffff;
+    }
+
+    #btn-operario-entrada {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      border: 1px solid rgba(167, 243, 208, 0.4);
+      font-weight: 600;
+      padding: 0.5rem 1.05rem !important;
+      border-radius: 0.75rem !important;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+      transition: var(--inv-transition);
+    }
+    #btn-operario-entrada:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(16, 185, 129, 0.45);
+    }
+
+    #btn-operario-salida {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      border: 1px solid rgba(254, 205, 211, 0.35);
+      font-weight: 600;
+      padding: 0.5rem 1.05rem !important;
+      border-radius: 0.75rem !important;
+      box-shadow: 0 4px 12px rgba(244, 63, 94, 0.35);
+      transition: var(--inv-transition);
+    }
+    #btn-operario-salida:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(244, 63, 94, 0.45);
+    }
+
+    /* Cápsula de sesión de usuario */
+    .user-session-pill {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      padding: 0.3rem 0.9rem 0.3rem 0.35rem;
+      backdrop-filter: blur(8px);
+    }
+
+    #user-avatar-initials {
+      width: 36px !important;
+      height: 36px !important;
+      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+      color: #0f172a !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    #user-rol.bg-danger {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      border: 1px solid rgba(147, 197, 253, 0.45);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      padding: 0.22em 0.65em;
+      border-radius: 999px;
+    }
+
+    #user-rol.bg-success {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      border: 1px solid rgba(167, 243, 208, 0.45);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      padding: 0.22em 0.65em;
+      border-radius: 999px;
+    }
+
+    #btn-logout {
+      border-radius: 0.75rem !important;
+      padding: 0.48rem 0.9rem !important;
+      font-weight: 600;
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+      transition: var(--inv-transition);
+    }
+    #btn-logout:hover {
+      background: #ef4444;
+      border-color: #ef4444;
+      color: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       5. DIFERENCIACIÓN DE PANELES POR ROL: BANNER ADMIN VS ZONA OPERARIO
+       ========================================================================== */
+
+    /* --- 5.1 BANNER SUPERIOR EJECUTIVO (TARJETA FLOTANTE GLASSMORPHISM LIMPIA) --- */
+    .admin-executive-banner {
+      background: linear-gradient(135deg, rgba(8, 15, 34, 0.94) 0%, rgba(15, 29, 64, 0.92) 55%, rgba(23, 43, 96, 0.90) 100%);
+      backdrop-filter: blur(20px) saturate(150%);
+      -webkit-backdrop-filter: blur(20px) saturate(150%);
+      border-radius: var(--inv-radius-xl);
+      border: 1px solid rgba(96, 165, 250, 0.42);
+      border-left: 4px solid #38bdf8;
+      box-shadow:
+        0 20px 45px -12px rgba(2, 6, 23, 0.65),
+        0 0 24px -4px rgba(37, 99, 235, 0.25),
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+      color: #ffffff;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .exec-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(37, 99, 235, 0.28);
+      border: 1px solid rgba(125, 211, 252, 0.45);
+      color: #bae6fd;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.36rem 0.9rem;
+      border-radius: 999px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    .exec-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    }
+
+    .exec-description {
+      color: #e2e8f0;
+      font-size: 0.92rem;
+      font-weight: 400;
+      line-height: 1.6;
+      max-width: 720px;
+    }
+
+    /* --- 5.2 PANEL DINÁMICO DE ACCIÓN RÁPIDA (SOLO OPERARIO) --- */
+    .operario-workspace-header {
+      background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+      border: 1px solid #bbf7d0;
+      border-radius: var(--inv-radius-xl);
+      box-shadow: var(--inv-shadow-md);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .op-quick-card {
+      background: #ffffff;
+      border-radius: var(--inv-radius-lg);
+      border: 2px solid transparent;
+      padding: 1.25rem 1.35rem;
+      box-shadow: var(--inv-shadow-sm);
+      transition: var(--inv-transition);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      gap: 1.1rem;
+      text-align: left;
+      width: 100%;
+    }
+
+    .op-quick-card.op-card-entrada {
+      border-color: #a7f3d0;
+      background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    }
+    .op-quick-card.op-card-entrada:hover {
+      border-color: #10b981;
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px -6px rgba(16, 185, 129, 0.22);
+    }
+
+    .op-quick-card.op-card-salida {
+      border-color: #fecdd3;
+      background: linear-gradient(135deg, #ffffff 0%, #fff1f2 100%);
+    }
+    .op-quick-card.op-card-salida:hover {
+      border-color: #f43f5e;
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px -6px rgba(244, 63, 94, 0.22);
+    }
+
+    .op-quick-card.op-card-kardex {
+      border-color: #bae6fd;
+      background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+    }
+    .op-quick-card.op-card-kardex:hover {
+      border-color: #0ea5e9;
+      transform: translateY(-3px);
+      box-shadow: 0 14px 28px -6px rgba(14, 165, 233, 0.2);
+    }
+
+    .op-icon-circle {
+      width: 56px;
+      height: 56px;
+      border-radius: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.45rem;
+      flex-shrink: 0;
+      transition: var(--inv-transition);
+    }
+
+    .op-card-entrada .op-icon-circle {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(16, 185, 129, 0.32);
+    }
+
+    .op-card-salida .op-icon-circle {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(244, 63, 94, 0.32);
+    }
+
+    .op-card-kardex .op-icon-circle {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+      color: #ffffff;
+      box-shadow: 0 6px 16px rgba(14, 165, 233, 0.32);
+    }
+
+    .op-quick-card:hover .op-icon-circle {
+      transform: scale(1.07);
+    }
+
+    /* ==========================================================================
+       6. PESTAÑAS DE NAVEGACIÓN PRINCIPAL (#mainTab) Y CONTENEDOR
+       ========================================================================== */
+    #mainTab {
+      border-bottom: none;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(12px);
+      padding: 0.38rem;
+      border-radius: var(--inv-radius-lg);
+      display: inline-flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.25);
     }
 
     .nav-tabs .nav-link {
-      color: #475569;
-      border-top-left-radius: 0.5rem;
-      border-top-right-radius: 0.5rem;
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 0.92rem;
+      border: none !important;
+      border-radius: 0.8rem !important;
+      padding: 0.65rem 1.25rem;
+      transition: var(--inv-transition);
     }
+
+    .nav-tabs .nav-link:hover {
+      color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+
     .nav-tabs .nav-link.active {
+      background-color: #ffffff !important;
       color: var(--inv-primary) !important;
-      border-color: #dee2e6 #dee2e6 #ffffff;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18), 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
+    .helper-bar-pill {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      backdrop-filter: blur(10px);
+      color: #e2e8f0 !important;
+      padding: 0.45rem 0.95rem;
+      border-radius: 999px;
+    }
+
+    #mainTabContent {
+      border-radius: var(--inv-radius-xl) !important;
+      border: 1px solid rgba(255, 255, 255, 0.85) !important;
+      box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.38) !important;
+      padding: 1.5rem !important;
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+    }
+
+    /* ==========================================================================
+       7. SELECTOR DE SEDES / ALMACENES (SEGMENTED CONTROL FLOTANTE)
+       ========================================================================== */
+    .almacenes-selector-wrap {
+      background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.15rem;
+      padding: 0.85rem 1.1rem;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    }
+
+    #pills-almacenes {
+      background: #e2e8f0 !important;
+      border: 1px solid rgba(203, 213, 225, 0.8) !important;
+      border-radius: 0.95rem !important;
+      padding: 0.38rem !important;
+      box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.06);
+      display: inline-flex;
+      width: auto;
+      max-width: 100%;
+    }
+
+    #pills-almacenes .nav-link {
+      color: #475569;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-weight: 700;
+      font-size: 0.88rem;
+      border-radius: 0.72rem;
+      padding: 0.62rem 1.25rem;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    #pills-almacenes .nav-link i {
+      font-size: 0.92rem;
+      padding: 0.32rem;
+      border-radius: 0.45rem;
+      background: rgba(15, 23, 42, 0.06);
+      color: #64748b;
+      transition: all 0.25s ease;
+    }
+
+    #pills-almacenes .nav-link:hover:not(.active) {
+      color: #0f172a;
+      background-color: rgba(255, 255, 255, 0.65);
+      transform: translateY(-1px);
+    }
+
+    #pills-almacenes .nav-link:hover:not(.active) i {
+      background: rgba(29, 78, 216, 0.1);
+      color: var(--inv-primary);
+    }
+
+    #pills-almacenes .nav-link.active {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      color: #ffffff;
+      border-color: rgba(147, 197, 253, 0.35);
+      box-shadow:
+        0 8px 18px -4px rgba(29, 78, 216, 0.42),
+        0 2px 4px -1px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    #pills-almacenes .nav-link.active i {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    body:has(#user-rol.bg-success) #pills-almacenes .nav-link.active {
+      background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+      border-color: rgba(110, 231, 183, 0.4);
+      box-shadow:
+        0 8px 18px -4px rgba(13, 148, 136, 0.42),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    /* ==========================================================================
+       8. BARRA DE HERRAMIENTAS, FILTROS FEFO, SEMÁFORO Y TABLA DE INVENTARIO
+       ========================================================================== */
+    .card {
+      border-radius: var(--inv-radius-lg) !important;
+      border: 1px solid var(--inv-border) !important;
+      box-shadow: var(--inv-shadow-sm) !important;
+      transition: var(--inv-transition);
+    }
+
+    .inv-warehouse-card {
+      border-radius: 1.25rem !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.08) !important;
+      background: #f8fafc !important;
+    }
+
+    /* Cabecera de Almacén y Barra de Herramientas (Search + FEFO Filter) */
+    .inv-toolbar-header {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      padding: 1.25rem 1.5rem !important;
+    }
+
+    .warehouse-icon-avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 0.9rem;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border: 1px solid #bfdbfe;
+      color: #1d4ed8;
+      box-shadow: 0 4px 10px rgba(29, 78, 216, 0.1);
+    }
+
+    body:has(#user-rol.bg-success) .warehouse-icon-avatar {
+      background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+      border-color: #99f6e4;
+      color: #0f766e;
+      box-shadow: 0 4px 10px rgba(13, 148, 136, 0.12);
+    }
+
+    #almacen-activo-codigo {
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border: none !important;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      padding: 0.32rem 0.65rem !important;
+      border-radius: 0.5rem;
+    }
+
+    /* Contenedor tipo cápsula para Buscador y Selector FEFO */
+    .inv-filter-toolbar {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      padding: 0.45rem;
+      border-radius: 0.95rem;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .inv-search-group {
+      min-width: 280px;
+      background: #ffffff;
+      border-radius: 0.7rem;
+      border: 1px solid #cbd5e1;
+      overflow: hidden;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: var(--inv-transition);
+    }
+
+    .inv-search-group:focus-within {
+      border-color: var(--inv-primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.14);
+    }
+
+    .inv-search-group .input-group-text {
+      background: transparent !important;
+      border: none !important;
+      color: #64748b;
+      padding-left: 0.85rem;
+    }
+
+    .inv-search-group .form-control {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0.55rem 0.85rem 0.55rem 0.25rem;
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    #filtro-fefo {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.7rem;
+      padding: 0.55rem 2.2rem 0.55rem 0.9rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #334155;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      cursor: pointer;
+    }
+
+    #btn-recargar-stock {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      border-radius: 0.7rem !important;
+      padding: 0.55rem 1rem !important;
+      font-size: 0.88rem;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: var(--inv-transition);
+    }
+
+    #btn-recargar-stock:hover {
+      background: var(--inv-primary);
+      border-color: var(--inv-primary);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(29, 78, 216, 0.22);
+    }
+
+    /* Inputs y Selectores Generales (Modales e Historial) */
+    .form-control, .form-select {
+      border-radius: 0.65rem;
+      border-color: var(--inv-border-strong);
+      padding-top: 0.48rem;
+      padding-bottom: 0.48rem;
+      font-size: 0.9rem;
+      transition: var(--inv-transition);
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--inv-primary);
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.14);
+    }
+
+    body:has(#user-rol.bg-success) .form-control:focus,
+    body:has(#user-rol.bg-success) .form-select:focus,
+    body:has(#user-rol.bg-success) .inv-search-group:focus-within {
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.16);
+    }
+
+    /* Barra y Semáforo de Caducidad (FEFO) Minimalista con Brillo Sutil */
+    .fefo-legend-bar {
+      background: #ffffff !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      padding: 0.75rem 1.5rem !important;
+    }
+
+    .badge-fefo-critico {
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+      color: #be123c;
+      border: 1px solid #fda4af;
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 6px rgba(225, 29, 72, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .badge-fefo-proximo {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      color: #b45309;
+      border: 1px solid #fcd34d;
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 6px rgba(217, 119, 6, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .badge-fefo-optimo {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      color: #047857;
+      border: 1px solid #6ee7b7;
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    }
+
+    .badge-fefo-vencido {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #f8fafc;
+      border: 1px solid #475569;
+      font-weight: 700;
+      font-size: 0.76rem;
+      letter-spacing: 0.02em;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    }
+
+    /* ==========================================================================
+       TABLA DE INVENTARIO ESTILO TARJETAS FLOTANTES MINIMALISTAS
+       ========================================================================== */
+    .inv-table-container {
+      background: #f8fafc;
+      padding: 0.65rem 1.15rem 1.15rem;
+    }
+
+    #tabla-productos-almacen {
+      border-collapse: separate !important;
+      border-spacing: 0 0.55rem !important;
+      margin-bottom: 0;
+    }
+
+    #tabla-productos-almacen thead th {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #64748b;
+      background: transparent !important;
+      border: none !important;
+      padding: 0.5rem 1rem 0.35rem;
+      white-space: nowrap;
+    }
+
+    #tabla-productos-almacen tbody tr {
+      background-color: #ffffff;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #tabla-productos-almacen tbody td {
+      padding: 1.05rem 1rem;
+      border-top: 1px solid #e2e8f0;
+      border-bottom: 1px solid #e2e8f0;
+      background-color: #ffffff;
+      vertical-align: middle;
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    #tabla-productos-almacen tbody td:first-child {
+      border-left: 3px solid #cbd5e1;
+      border-top-left-radius: 0.85rem;
+      border-bottom-left-radius: 0.85rem;
+    }
+
+    #tabla-productos-almacen tbody td:last-child {
+      border-right: 1px solid #e2e8f0;
+      border-top-right-radius: 0.85rem;
+      border-bottom-right-radius: 0.85rem;
+    }
+
+    #tabla-productos-almacen tbody tr:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px -6px rgba(15, 23, 42, 0.1), 0 4px 8px -4px rgba(15, 23, 42, 0.05);
+    }
+
+    #tabla-productos-almacen tbody tr:hover td {
+      background-color: #f8fbff !important;
+      border-top-color: #bfdbfe;
+      border-bottom-color: #bfdbfe;
+    }
+
+    #tabla-productos-almacen tbody tr:hover td:first-child {
+      border-left-color: var(--inv-primary);
+    }
+
+    #tabla-productos-almacen tbody tr:hover td:last-child {
+      border-right-color: #bfdbfe;
+    }
+
+    body:has(#user-rol.bg-success) #tabla-productos-almacen tbody tr:hover td {
+      background-color: #f0fdfa !important;
+      border-top-color: #99f6e4;
+      border-bottom-color: #99f6e4;
+    }
+
+    body:has(#user-rol.bg-success) #tabla-productos-almacen tbody tr:hover td:last-child {
+      border-right-color: #99f6e4;
+    }
+
+    /* Jerarquía interna de celdas en #tabla-productos-almacen */
+    #tabla-productos-almacen tbody td:nth-child(1) .fw-bold {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.95rem;
+      color: #0f172a !important;
+      letter-spacing: -0.01em;
+    }
+
+    #tabla-productos-almacen tbody td:nth-child(2) .badge,
+    #tabla-productos-almacen tbody td:nth-child(3) .badge {
+      background-color: #f8fafc !important;
+      color: #334155 !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 0.42rem 0.7rem;
+      border-radius: 0.5rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    #tabla-productos-almacen tbody td:nth-child(3) .badge {
+      background-color: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    #tabla-productos-almacen tbody td:nth-child(4) {
+      color: #475569;
+      font-weight: 600;
+      font-size: 0.84rem;
+    }
+
+    #tabla-productos-almacen tbody td:nth-child(5) {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 1.05rem !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.02em;
+    }
+
+    /* Estilos generales para las demás tablas (Kardex y Usuarios) */
+    .table:not(#tabla-productos-almacen) thead th {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #475569;
+      background-color: #f8fafc !important;
+      border-bottom: 2px solid #e2e8f0 !important;
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+      white-space: nowrap;
+    }
+
+    #tab-historial .table thead.table-dark th {
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+      color: #f8fafc !important;
+      border-bottom: none !important;
+    }
+
+    .table:not(#tabla-productos-almacen) tbody td {
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+      border-bottom-color: #f1f5f9;
+      vertical-align: middle;
+    }
+
+    /* Botones de Acción Rápida en Tablas (.btn-operar-item) */
+    .btn-operar-item {
+      border-radius: 0.7rem !important;
+      font-weight: 700;
+      padding: 0.45rem 0.9rem !important;
+      border: 1.5px solid #bfdbfe !important;
+      color: var(--inv-primary) !important;
+      background: linear-gradient(180deg, #ffffff 0%, #eff6ff 100%);
+      box-shadow: 0 2px 5px rgba(29, 78, 216, 0.08);
+      transition: var(--inv-transition);
+    }
+
+    .btn-operar-item:hover {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+      border-color: #1d4ed8 !important;
+      color: #ffffff !important;
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 14px rgba(29, 78, 216, 0.3);
+    }
+
+    body:has(#user-rol.bg-success) .btn-operar-item {
+      padding: 0.48rem 0.95rem !important;
+      border-color: #99f6e4 !important;
+      color: #0f766e !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+    }
+
+    body:has(#user-rol.bg-success) .btn-operar-item:hover {
+      background: linear-gradient(135deg, #10b981 0%, #0d9488 100%) !important;
+      border-color: #0d9488 !important;
+      color: #ffffff !important;
+      box-shadow: 0 6px 14px rgba(13, 148, 136, 0.32);
+    }
+
+    /* ==========================================================================
+       9. MODALES CORPORATIVOS, TOOLTIPS FLOTANTES E INDICADOR DE EXPORTACIÓN
+       ========================================================================== */
+    /* Backdrop con efecto Glassmorphism oscuro traslúcido para Modales Bootstrap */
+    .modal-backdrop.show {
+      opacity: 1 !important;
+      background-color: rgba(6, 11, 25, 0.72) !important;
+      backdrop-filter: blur(10px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(10px) saturate(140%) !important;
+    }
+
+    .modal-content {
+      border-radius: 1.25rem; /* 20px */
+      border: 1px solid rgba(226, 232, 240, 0.92);
+      box-shadow:
+        0 35px 70px -15px rgba(2, 6, 23, 0.62),
+        0 18px 36px -18px rgba(15, 23, 42, 0.4),
+        inset 0 1px 0 0 #ffffff;
+      overflow: hidden;
+    }
+
+    .modal-header {
+      background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+    }
+
+    /* --- Rediseño Específico: Modal "Registrar Nuevo Producto" (#modal-nuevo-producto) --- */
+    #modal-nuevo-producto .modal-content {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 1.25rem;
+      position: relative;
+    }
+
+    /* Borde luminoso superior tridimensional */
+    #modal-nuevo-producto .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #1d4ed8 0%, #38bdf8 50%, #2563eb 100%);
+      box-shadow: 0 2px 12px rgba(56, 189, 248, 0.5);
+      z-index: 2;
+    }
+
+    #modal-nuevo-producto .modal-header {
+      background:
+        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.07) 0%, transparent 65%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.5rem 1.65rem 1.25rem;
+    }
+
+    .prod-modal-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 0.95rem;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0284c7 100%);
+      border: 1px solid rgba(147, 197, 253, 0.5);
+      color: #ffffff;
+      box-shadow:
+        0 10px 20px -5px rgba(29, 78, 216, 0.45),
+        0 0 0 5px rgba(37, 99, 235, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
+    }
+
+    #modal-nuevo-producto .modal-title {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 1.22rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+    }
+
+    #modal-nuevo-producto .form-label {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #475569 !important;
+      margin-bottom: 0.42rem;
+    }
+
+    /* Inputs y Textarea del formulario de producto */
+    #form-nuevo-producto .form-control {
+      background-color: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.8rem;
+      padding: 0.7rem 0.95rem;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: #0f172a;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #form-nuevo-producto .form-control::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    #form-nuevo-producto .form-control:focus {
+      background-color: #ffffff;
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.14),
+        0 4px 12px -2px rgba(37, 99, 235, 0.08);
+      transform: translateY(-1px);
+    }
+
+    /* Cuadrícula estilizada para los precios (Costo y Venta) */
+    .prod-prices-grid-box {
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border: 1px solid #dbeafe;
+      border-radius: 1rem;
+      padding: 1rem 1.05rem;
+    }
+
+    .prod-price-input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .prod-price-prefix {
+      position: absolute;
+      left: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #2563eb;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #form-nuevo-producto .prod-price-input-wrap .form-control {
+      padding-left: 2rem;
+      background-color: #ffffff;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+
+    /* Botones de Acción del Modal ("Cancelar" y "Guardar Producto") */
+    #modal-nuevo-producto .modal-footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      padding: 1.1rem 1.65rem;
+      gap: 0.5rem;
+    }
+
+    .btn-prod-cancel {
+      background: #ffffff !important;
+      color: #475569 !important;
+      border: 1.5px solid #cbd5e1 !important;
+      border-radius: 0.8rem !important;
+      padding: 0.65rem 1.35rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      transition: all 0.22s ease !important;
+    }
+
+    .btn-prod-cancel:hover {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border-color: #94a3b8 !important;
+      transform: translateY(-1px);
+    }
+
+    .btn-prod-save {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%) !important;
+      border: 1px solid rgba(147, 197, 253, 0.35) !important;
+      border-radius: 0.8rem !important;
+      padding: 0.65rem 1.55rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #ffffff !important;
+      box-shadow:
+        0 8px 20px -5px rgba(29, 78, 216, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    .btn-prod-save:hover {
+      transform: translateY(-2px);
+      background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%) !important;
+      box-shadow:
+        0 12px 26px -5px rgba(37, 99, 235, 0.62),
+        0 0 14px rgba(59, 130, 246, 0.25) !important;
+    }
+
+    /* --- Rediseño Específico: Modal "Operación de Stock por Lote" (#modal-movimiento-lote) --- */
+    #modal-movimiento-lote .modal-content {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 1.25rem; /* 20px */
+      position: relative;
+    }
+
+    /* Borde luminoso superior dinámico (Esmeralda en Entrada / Coral en Salida) */
+    #modal-movimiento-lote .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #10b981 0%, #059669 50%, #2563eb 100%);
+      box-shadow: 0 2px 12px rgba(16, 185, 129, 0.45);
+      z-index: 2;
+      transition: all 0.3s ease;
+    }
+
+    #modal-movimiento-lote:has(#tipo-salida:checked) .modal-content::before {
+      background: linear-gradient(90deg, #f43f5e 0%, #e11d48 50%, #fb7185 100%);
+      box-shadow: 0 2px 12px rgba(244, 63, 94, 0.45);
+    }
+
+    #modal-movimiento-lote .modal-header {
+      background:
+        radial-gradient(circle at 12% 0%, rgba(37, 99, 235, 0.07) 0%, transparent 65%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 1.4rem 1.65rem 1.2rem;
+    }
+
+    .mov-modal-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 0.95rem;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0284c7 100%);
+      border: 1px solid rgba(147, 197, 253, 0.5);
+      color: #ffffff;
+      box-shadow:
+        0 10px 20px -5px rgba(29, 78, 216, 0.45),
+        0 0 0 5px rgba(37, 99, 235, 0.08),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+    }
+
+    #modal-movimiento-lote .modal-title {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #0f172a;
+    }
+
+    /* Segmented Control para Tipo de Operación (Entrada vs Salida) */
+    .mov-segmented-control {
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.95rem;
+      padding: 0.35rem;
+      display: flex;
+      gap: 0.4rem;
+      box-shadow: inset 0 2px 4px rgba(15, 23, 42, 0.06);
+    }
+
+    .mov-segmented-control label.btn {
+      border: 1px solid transparent !important;
+      border-radius: 0.72rem !important;
+      padding: 0.68rem 1rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.88rem;
+      font-weight: 700 !important;
+      color: #475569 !important;
+      background: transparent;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .mov-segmented-control label.btn:hover {
+      color: #0f172a !important;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    /* Estado Seleccionado: ENTRADA (Verde Esmeralda Vibrante) */
+    #tipo-entrada:checked + label.btn {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(167, 243, 208, 0.45) !important;
+      box-shadow:
+        0 8px 18px -4px rgba(16, 185, 129, 0.45),
+        0 2px 4px -1px rgba(15, 23, 42, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      transform: translateY(-1px);
+    }
+
+    /* Estado Seleccionado: SALIDA / DESPACHO (Rojo Coral Elegante) */
+    #tipo-salida:checked + label.btn {
+      background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%) !important;
+      color: #ffffff !important;
+      border-color: rgba(254, 205, 211, 0.45) !important;
+      box-shadow:
+        0 8px 18px -4px rgba(244, 63, 94, 0.45),
+        0 2px 4px -1px rgba(15, 23, 42, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+      transform: translateY(-1px);
+    }
+
+    /* Etiquetas e Inputs del Formulario de Movimiento por Lote */
+    #form-movimiento-lote .form-label {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #475569;
+      margin-bottom: 0.4rem;
+    }
+
+    #form-movimiento-lote .form-control,
+    #form-movimiento-lote .form-select {
+      background-color: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.8rem;
+      padding: 0.68rem 0.95rem;
+      font-size: 0.91rem;
+      font-weight: 500;
+      color: #0f172a;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.02);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #form-movimiento-lote .form-control:focus,
+    #form-movimiento-lote .form-select:focus {
+      background-color: #ffffff;
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.14),
+        0 4px 12px -2px rgba(37, 99, 235, 0.08);
+      transform: translateY(-1px);
+    }
+
+    /* Caja destacada para Proveedor / Trazabilidad */
+    #campo-proveedor-origen {
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%) !important;
+      border: 1px solid #dbeafe !important;
+      border-radius: 1rem !important;
+      padding: 0.95rem 1.05rem !important;
+    }
+
+    #campo-proveedor-origen .form-control {
+      background-color: #ffffff;
+      padding: 0.56rem 0.85rem;
+      font-size: 0.86rem;
+    }
+
+    /* Caja destacada para Cantidad de Unidades */
+    .mov-quantity-box {
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 1rem;
+      padding: 0.85rem 1rem;
+    }
+
+    #mov-cantidad {
+      background-color: #ffffff !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 1.35rem !important;
+      font-weight: 800 !important;
+      color: #1d4ed8 !important;
+      letter-spacing: -0.02em;
+    }
+
+    #modal-movimiento-lote:has(#tipo-salida:checked) #mov-cantidad {
+      color: #e11d48 !important;
+    }
+
+    /* Pie del Modal y Botón Confirmar Operación */
+    #modal-movimiento-lote .modal-footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      padding: 1.1rem 1.65rem;
+      gap: 0.5rem;
+    }
+
+    #btn-submit-movimiento {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%) !important;
+      border: 1px solid rgba(147, 197, 253, 0.35) !important;
+      border-radius: 0.8rem !important;
+      padding: 0.68rem 1.6rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff !important;
+      box-shadow:
+        0 8px 20px -5px rgba(29, 78, 216, 0.48),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28) !important;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    #btn-submit-movimiento:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow: 0 12px 26px -5px rgba(37, 99, 235, 0.6) !important;
+    }
+
+    /* ==============================================================
+       REDISEÑO EJECUTIVO: MODAL "REGISTRAR NUEVO USUARIO"
+       ============================================================== */
+    #modal-nuevo-usuario .modal-content {
+      position: relative;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+      border-radius: 1.25rem !important; /* 20px */
+      border: 1px solid rgba(226, 232, 240, 0.92) !important;
+      box-shadow:
+        0 32px 68px -14px rgba(2, 6, 23, 0.58),
+        0 16px 32px -10px rgba(15, 23, 42, 0.35),
+        0 0 0 1px rgba(255, 255, 255, 0.95) inset !important;
+      overflow: hidden;
+    }
+
+    /* Borde superior con gradiente luminoso 3D */
+    #modal-nuevo-usuario .modal-content::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #1e3a8a 0%, #2563eb 35%, #38bdf8 50%, #2563eb 65%, #1e3a8a 100%);
+      z-index: 3;
+    }
+
+    #modal-nuevo-usuario .modal-header {
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border-bottom: 1px solid #e2e8f0 !important;
+      padding: 1.35rem 1.7rem 1.2rem !important;
+    }
+
+    /* Contenedor moderno de icono de usuario con relieve y acento azul */
+    .usr-modal-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 0.9rem;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #2563eb 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow:
+        0 10px 22px -5px rgba(37, 99, 235, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(147, 197, 253, 0.32);
+      flex-shrink: 0;
+    }
+
+    #modal-nuevo-usuario .modal-title {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 1.18rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    #modal-nuevo-usuario .usr-modal-subtitle {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #64748b;
+      display: block;
+      margin-top: 0.15rem;
+    }
+
+    /* Campos de formulario (Inputs y Select) */
+    #form-nuevo-usuario .form-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #334155 !important;
+      margin-bottom: 0.42rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.38rem;
+    }
+
+    #form-nuevo-usuario .form-control,
+    #form-nuevo-usuario .form-select {
+      background-color: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.8rem;
+      padding: 0.7rem 0.98rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #0f172a;
+      box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #form-nuevo-usuario .form-control::placeholder {
+      color: #94a3b8;
+      font-weight: 400;
+    }
+
+    #form-nuevo-usuario .form-control:hover,
+    #form-nuevo-usuario .form-select:hover {
+      background-color: #ffffff;
+      border-color: #94a3b8;
+    }
+
+    #form-nuevo-usuario .form-control:focus,
+    #form-nuevo-usuario .form-select:focus {
+      background-color: #ffffff;
+      border-color: #2563eb;
+      box-shadow:
+        0 0 0 4px rgba(37, 99, 235, 0.14),
+        0 4px 12px -2px rgba(37, 99, 235, 0.08);
+      outline: none;
+    }
+
+    /* Panel destacado para asignación de rol */
+    .usr-role-select-box {
+      background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+      border: 1px solid #dbeafe;
+      border-radius: 0.95rem;
+      padding: 1rem 1.1rem;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    }
+
+    #modal-nuevo-usuario .modal-footer {
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      padding: 1.05rem 1.7rem !important;
+      gap: 0.65rem;
+    }
+
+    /* Botones de acción ("Cancelar" y "Guardar Usuario") */
+    .btn-usr-cancel {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 0.8rem;
+      padding: 0.64rem 1.35rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #475569;
+      transition: all 0.2s ease;
+    }
+
+    .btn-usr-cancel:hover {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+      color: #0f172a;
+    }
+
+    .btn-usr-save {
+      background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #2563eb 100%);
+      border: 1px solid rgba(147, 197, 253, 0.35);
+      border-radius: 0.8rem;
+      padding: 0.66rem 1.55rem;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #ffffff !important;
+      box-shadow:
+        0 8px 20px -5px rgba(29, 78, 216, 0.48),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-usr-save:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow:
+        0 12px 26px -5px rgba(37, 99, 235, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.36);
+      color: #ffffff !important;
+    }
+
+    .btn-usr-save:active {
+      transform: translateY(0);
+    }
+
+    /* Sistema de Tooltips Flotantes UI ([data-tooltip]) */
+    [data-tooltip] {
+      position: relative;
+    }
+
+    [data-tooltip]::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 9px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      padding: 0.42rem 0.78rem;
+      border-radius: 0.55rem;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      white-space: nowrap;
+      box-shadow: 0 10px 25px -5px rgba(2, 6, 23, 0.45);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1080;
+    }
+
+    [data-tooltip]::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 3px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      border-width: 6px 6px 0 6px;
+      border-style: solid;
+      border-color: #1e293b transparent transparent transparent;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 1080;
+    }
+
+    [data-tooltip]:hover::after,
+    [data-tooltip]:hover::before,
+    [data-tooltip]:focus-visible::after,
+    [data-tooltip]:focus-visible::before {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Badge de lote interactivo */
+    .lote-badge-interactive {
+      cursor: pointer;
+      transition: var(--inv-transition);
+    }
+    .lote-badge-interactive:hover {
+      background-color: #dbeafe !important;
+      border-color: #60a5fa !important;
+      color: #1d4ed8 !important;
+      transform: translateY(-1px);
+    }
+
+    /* Botones de Exportación Corporativos */
+    .btn-export-excel {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      border: 1px solid rgba(110, 231, 183, 0.4);
+      color: #ffffff;
+      border-radius: 0.7rem !important;
+      padding: 0.52rem 0.95rem !important;
+      font-size: 0.84rem;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25);
+      transition: var(--inv-transition);
+    }
+    .btn-export-excel:hover:not(:disabled) {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #ffffff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(5, 150, 105, 0.35);
+    }
+    .btn-export-excel:disabled {
+      opacity: 0.8;
+      cursor: wait;
+    }
+
+    .btn-export-pdf {
+      background: #ffffff;
+      border: 1px solid #fecdd3;
+      color: #be123c;
+      border-radius: 0.7rem !important;
+      padding: 0.52rem 0.9rem !important;
+      font-size: 0.84rem;
+      font-weight: 700;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      transition: var(--inv-transition);
+    }
+    .btn-export-pdf:hover:not(:disabled) {
+      background: #fff1f2;
+      border-color: #f43f5e;
+      color: #9f1239;
+      transform: translateY(-1px);
+    }
+    .btn-export-pdf:disabled {
+      opacity: 0.75;
+      cursor: wait;
+    }
+
+    /* Toast Flotante de Carga para Exportaciones */
+    .wms-export-toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 2000;
+      background: linear-gradient(135deg, rgba(9, 13, 22, 0.96) 0%, rgba(15, 23, 42, 0.95) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-left: 4px solid #38bdf8;
+      color: #ffffff;
+      padding: 0.95rem 1.35rem;
+      border-radius: 1rem;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(14px);
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      transform: translateY(120%);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .wms-export-toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ==========================================================================
+       10. MODAL DE CONFIRMACIÓN DE CIERRE DE SESIÓN (SWEETALERT2 REDISEÑADO)
+       ========================================================================== */
+    /* 1. Backdrop con efecto Glassmorphism oscuro y traslúcido */
+    div:where(.swal2-container).swal2-backdrop-show,
+    div:where(.swal2-container).swal2-noanimation {
+      background: rgba(6, 11, 25, 0.72) !important;
+      backdrop-filter: blur(12px) saturate(140%) !important;
+      -webkit-backdrop-filter: blur(12px) saturate(140%) !important;
+    }
+
+    /* 2. Contenedor central del Modal con borde luminoso superior y sombra profunda */
+    div:where(.swal2-container) div:where(.swal2-popup) {
+      border-radius: 1.5rem !important;
+      padding: 2rem 1.85rem 1.85rem !important;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+      border: 1px solid rgba(226, 232, 240, 0.95) !important;
+      box-shadow:
+        0 30px 60px -12px rgba(2, 6, 23, 0.58),
+        0 0 0 1px rgba(255, 255, 255, 0.8),
+        inset 0 1px 0 0 #ffffff !important;
+      font-family: 'Inter', sans-serif !important;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Borde luminoso superior ejecutivo para el modal de cierre de sesión */
+    div:where(.swal2-popup):has(.swal2-question)::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #f43f5e 0%, #ef4444 50%, #fb7185 100%);
+      box-shadow: 0 2px 12px rgba(239, 68, 68, 0.55);
+    }
+
+    /* 3. Iconografía: transformar el círculo '?' en un icono de apagado / salida estilizado */
+    div:where(.swal2-icon).swal2-question {
+      width: 4.6rem !important;
+      height: 4.6rem !important;
+      margin: 0.5rem auto 1.15rem !important;
+      border-radius: 1.35rem !important;
+      border: 1.5px solid #fecdd3 !important;
+      background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%) !important;
+      color: #e11d48 !important;
+      box-shadow:
+        0 12px 24px -6px rgba(225, 29, 72, 0.25),
+        0 0 0 6px rgba(244, 63, 94, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+    }
+
+    div:where(.swal2-icon).swal2-question .swal2-icon-content {
+      font-size: 0 !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    div:where(.swal2-icon).swal2-question .swal2-icon-content::before {
+      content: '\f011'; /* FontAwesome fa-power-off */
+      font-family: 'Font Awesome 6 Free';
+      font-weight: 900;
+      font-size: 1.85rem;
+      color: #e11d48;
+      filter: drop-shadow(0 2px 6px rgba(225, 29, 72, 0.3));
+    }
+
+    /* 4. Jerarquía Tipográfica del Modal */
+    div:where(.swal2-container) h2:where(.swal2-title) {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+      font-size: 1.5rem !important;
+      font-weight: 800 !important;
+      letter-spacing: -0.025em !important;
+      color: #0f172a !important;
+      padding: 0.2rem 1rem 0 !important;
+    }
+
+    div:where(.swal2-container) div:where(.swal2-html-container) {
+      font-size: 0.95rem !important;
+      font-weight: 400 !important;
+      color: #64748b !important;
+      line-height: 1.55 !important;
+      margin: 0.55rem 1.25rem 0.25rem !important;
+    }
+
+    /* 5. Botones de Acción ("Sí, salir" y "Cancelar") */
+    div:where(.swal2-container) div:where(.swal2-actions) {
+      margin-top: 1.6rem !important;
+      gap: 0.75rem !important;
+      width: 100%;
+      padding: 0 0.75rem;
+    }
+
+    /* Botón de Peligro Principal ("Sí, salir") */
+    div:where(.swal2-popup):has(.swal2-question) button:where(.swal2-styled).swal2-confirm {
+      background: linear-gradient(135deg, #f43f5e 0%, #dc2626 100%) !important;
+      border: 1px solid rgba(254, 205, 211, 0.45) !important;
+      border-radius: 0.85rem !important;
+      padding: 0.72rem 1.75rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+      font-size: 0.92rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.01em !important;
+      color: #ffffff !important;
+      box-shadow:
+        0 8px 20px -4px rgba(225, 29, 72, 0.48),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+      transition: all 0.24s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    div:where(.swal2-popup):has(.swal2-question) button:where(.swal2-styled).swal2-confirm:hover {
+      transform: translateY(-2px) !important;
+      background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%) !important;
+      box-shadow:
+        0 12px 28px -4px rgba(225, 29, 72, 0.62),
+        0 0 16px rgba(244, 63, 94, 0.35) !important;
+    }
+
+    /* Botón de Cancelación Neutro ("Cancelar") */
+    div:where(.swal2-container) button:where(.swal2-styled).swal2-cancel {
+      background: #ffffff !important;
+      color: #475569 !important;
+      border: 1.5px solid #cbd5e1 !important;
+      border-radius: 0.85rem !important;
+      padding: 0.72rem 1.6rem !important;
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif !important;
+      font-size: 0.92rem !important;
+      font-weight: 700 !important;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+
+    div:where(.swal2-container) button:where(.swal2-styled).swal2-cancel:hover {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+      border-color: #94a3b8 !important;
+      transform: translateY(-2px) !important;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08) !important;
     }
   </style>
 </head>
@@ -106,17 +1825,21 @@
   <!-- ========================================== -->
   <!-- 1. NAVBAR SUPERIOR ESTILIZADO              -->
   <!-- ========================================== -->
-  <nav class="navbar navbar-expand-lg navbar-dark inv-navbar sticky-top py-2.5 shadow-sm">
+  <nav class="navbar navbar-expand-lg navbar-dark inv-navbar sticky-top">
     <div class="container-fluid px-3 px-lg-4">
       
       <!-- Logo y Título -->
-      <a class="navbar-brand d-flex align-items-center gap-2.5" href="index.html">
-        <div class="rounded-3 text-white d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #4338ca);">
+      <a class="navbar-brand d-flex align-items-center gap-3 brand-capsule" href="index.html">
+        <div class="brand-icon-box text-white d-flex align-items-center justify-content-center">
           <i class="fa-solid fa-boxes-stacked fs-5"></i>
         </div>
         <div>
-          <span class="fw-bold tracking-tight text-white d-block lh-1">SISTEMA DE INVENTARIO</span>
-          <span class="text-white-50 small lh-1" style="font-size: 0.72rem;">Control Simplificado de Stock y Lotes</span>
+          <div class="d-flex align-items-center gap-2">
+            <span class="brand-title-text d-block lh-1">SISTEMA WMS PRO</span>
+            <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-50 solo-admin" style="font-size: 0.62rem; letter-spacing: 0.06em;">SUITE EJECUTIVA</span>
+            <span class="badge bg-success bg-opacity-25 text-white border border-success border-opacity-50 solo-operario" style="font-size: 0.62rem; letter-spacing: 0.06em;">TERMINAL OPERATIVA</span>
+          </div>
+          <span class="brand-subtitle-text lh-1 d-block mt-1">Control Inteligente de Almacenes, Stock y Trazabilidad FEFO</span>
         </div>
       </a>
 
@@ -129,27 +1852,27 @@
       <div class="collapse navbar-collapse" id="invNavbarContent">
         
         <!-- Acciones en Cabecera -->
-        <div class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 d-flex align-items-center gap-2 pt-2 pt-lg-0">
+        <div class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 d-flex align-items-center gap-2 pt-2 pt-lg-0">
           
           <!-- BOTÓN ÚNICO: + Nuevo Producto (EXCLUSIVO 'ADMIN') -->
-          <button id="btn-nuevo-producto-nav" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto" style="background: #6366f1; border-color: #6366f1;">
-            <i class="fa-solid fa-plus"></i>
+          <button id="btn-nuevo-producto-nav" class="btn btn-sm btn-primary d-flex align-items-center gap-2 solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto">
+            <i class="fa-solid fa-plus-circle"></i>
             <span>+ Nuevo Producto</span>
           </button>
 
           <!-- BOTONES OPERATIVOS RÁPIDOS (EXCLUSIVOS 'OPERARIO') -->
-          <button id="btn-operario-entrada" class="btn btn-sm btn-success d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
+          <button id="btn-operario-entrada" class="btn btn-sm btn-success d-flex align-items-center gap-2 solo-operario">
             <i class="fa-solid fa-arrow-down"></i>
             <span>📥 Registrar Entrada</span>
           </button>
 
-          <button id="btn-operario-salida" class="btn btn-sm btn-danger d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
+          <button id="btn-operario-salida" class="btn btn-sm btn-danger d-flex align-items-center gap-2 solo-operario">
             <i class="fa-solid fa-arrow-up"></i>
             <span>📤 Registrar Salida / Despacho</span>
           </button>
 
           <!-- BOTÓN GENERAL ADMIN: Entrada / Salida por Lote -->
-          <button id="btn-movimiento-nav" class="btn btn-sm btn-outline-light d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-admin" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
+          <button id="btn-movimiento-nav" class="btn btn-sm btn-outline-light d-flex align-items-center gap-2 solo-admin" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
             <i class="fa-solid fa-arrow-right-arrow-left"></i>
             <span>Entrada / Salida por Lote</span>
           </button>
@@ -158,18 +1881,18 @@
 
         <!-- Información de Sesión y Salida -->
         <div class="d-flex align-items-center gap-3 pt-2 pt-lg-0 border-top border-lg-0 border-secondary">
-          <div class="d-flex align-items-center gap-2 text-white">
-            <div class="rounded-circle bg-white text-dark fw-bold d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-size: 0.85rem;" id="user-avatar-initials">
+          <div class="user-session-pill d-flex align-items-center gap-2.5 text-white">
+            <div class="rounded-circle fw-bold d-flex align-items-center justify-content-center" style="font-size: 0.82rem;" id="user-avatar-initials">
               US
             </div>
-            <div class="d-none d-sm-block text-start">
+            <div class="d-none d-sm-block text-start pe-1">
               <div class="small fw-semibold text-white lh-1" id="user-nombre">Cargando...</div>
               <span class="badge mt-1" id="user-rol">ROL</span>
             </div>
           </div>
 
-          <button id="btn-logout" class="btn btn-sm btn-danger d-flex align-items-center gap-1.5 px-2.5 py-1.5 rounded-3 shadow-xs" title="Cerrar Sesión">
-            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          <button id="btn-logout" class="btn btn-sm d-flex align-items-center gap-1.5" title="Cerrar Sesión" data-tooltip="Finalizar sesión de forma segura">
+            <i class="fa-solid fa-power-off"></i>
             <span class="d-none d-md-inline">Salir</span>
           </button>
         </div>
@@ -179,31 +1902,119 @@
   </nav>
 
   <!-- ========================================== -->
-  <!-- 2. CONTENIDO PRINCIPAL POR PESTAÑAS        -->
+  <!-- 2. CONTENIDO PRINCIPAL Y PANELES POR ROL   -->
   <!-- ========================================== -->
-  <div class="container-fluid py-4 flex-grow-1">
+  <div class="container-fluid px-3 px-lg-4 py-4 flex-grow-1">
 
-    <!-- MENÚ DE PESTAÑAS PRINCIPAL -->
-    <ul class="nav nav-tabs fw-bold mb-3" id="mainTab" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active d-flex align-items-center gap-2" id="tab-inv-btn" data-bs-toggle="tab" data-bs-target="#tab-inventario" type="button" role="tab">
-          <i class="fa-solid fa-boxes-stacked text-primary"></i>
-          <span>📦 Inventario y Almacenes</span>
-        </button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link d-flex align-items-center gap-2" id="tab-hist-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab" onclick="cargarHistorialMovimientos()">
-          <i class="fa-solid fa-clock-rotate-left text-info"></i>
-          <span>📋 Historial de Movimientos</span>
-        </button>
-      </li>
-      <li class="nav-item solo-admin" role="presentation" id="nav-item-gestion-admin">
-        <button class="nav-link d-flex align-items-center gap-2" id="tab-gest-btn" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button" role="tab">
-          <i class="fa-solid fa-gear text-danger"></i>
-          <span>⚙️ Gestión del Sistema</span>
-        </button>
-      </li>
-    </ul>
+    <!-- ==================================================================== -->
+    <!-- 2A. BANNER SUPERIOR EJECUTIVO (EXCLUSIVO ROL ADMINISTRADOR)          -->
+    <!-- ==================================================================== -->
+    <div class="admin-executive-banner p-4 p-lg-4 mb-4 solo-admin">
+      <div class="py-1">
+        <div class="exec-badge-pill mb-2">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>Panel de Dirección &amp; Control Total WMS</span>
+        </div>
+        <h3 class="mb-2 exec-title">Centro de Gobierno de Inventarios y Catálogo</h3>
+        <p class="exec-description mb-0">
+          Supervisión multi-almacén en tiempo real, auditoría de trazabilidad FEFO, administración del catálogo maestro y control de privilegios de usuarios.
+        </p>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 2B. PANEL DE AGILIDAD OPERATIVA (EXCLUSIVO ROL OPERARIO)             -->
+    <!-- ==================================================================== -->
+    <div class="operario-workspace-header mb-4 solo-operario">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2.5">
+          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill fw-bold">
+            <i class="fa-solid fa-bolt me-1"></i> TERMINAL DE OPERACIONES ÁGILES
+          </span>
+          <span class="text-muted small d-none d-md-inline">
+            Seleccione una tarjeta de acceso directo para registrar ingresos o despachos de mercancía al instante.
+          </span>
+        </div>
+        <span class="small fw-semibold text-success">
+          <i class="fa-solid fa-circle-check me-1"></i> Prioridad de Despacho: Primero en Vencer, Primero en Salir (FEFO)
+        </span>
+      </div>
+
+      <div class="row g-3">
+        <!-- Tarjeta Grande 1: Registrar Entrada -->
+        <div class="col-md-4">
+          <button type="button" class="op-quick-card op-card-entrada" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote" onclick="const r=document.getElementById('tipo-entrada'); if(r) r.checked=true;">
+            <div class="op-icon-circle">
+              <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+            <div>
+              <span class="badge bg-success bg-opacity-10 text-success fw-bold mb-1" style="font-size: 0.68rem;">INGRESO DE MERCANCÍA (+)</span>
+              <h6 class="fw-bold text-dark mb-0 op-card-title">📥 Registrar Entrada de Lote</h6>
+              <small class="text-muted d-block mt-0.5">Recepción en almacén y registro de caducidad</small>
+            </div>
+          </button>
+        </div>
+
+        <!-- Tarjeta Grande 2: Registrar Salida / Despacho -->
+        <div class="col-md-4">
+          <button type="button" class="op-quick-card op-card-salida" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote" onclick="const r=document.getElementById('tipo-salida'); if(r) r.checked=true;">
+            <div class="op-icon-circle">
+              <i class="fa-solid fa-dolly"></i>
+            </div>
+            <div>
+              <span class="badge bg-danger bg-opacity-10 text-danger fw-bold mb-1" style="font-size: 0.68rem;">ORDEN DE DESPACHO (-)</span>
+              <h6 class="fw-bold text-dark mb-0 op-card-title">📤 Registrar Salida / Despacho</h6>
+              <small class="text-muted d-block mt-0.5">Descuento ágil de unidades disponibles por lote</small>
+            </div>
+          </button>
+        </div>
+
+        <!-- Tarjeta Grande 3: Consulta Rápida de Movimientos -->
+        <div class="col-md-4">
+          <button type="button" class="op-quick-card op-card-kardex" onclick="const t=document.getElementById('tab-hist-btn'); if(t){ bootstrap.Tab.getOrCreateInstance(t).show(); cargarHistorialMovimientos(); }">
+            <div class="op-icon-circle">
+              <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div>
+              <span class="badge bg-info bg-opacity-10 text-info fw-bold mb-1" style="font-size: 0.68rem;">TRAZABILIDAD EN VIVO</span>
+              <h6 class="fw-bold text-dark mb-0 op-card-title">📋 Ver Kardex Reciente</h6>
+              <small class="text-muted d-block mt-0.5">Verificar últimos ingresos y despachos realizados</small>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================================================================== -->
+    <!-- 2C. MENÚ DE PESTAÑAS PRINCIPAL                                       -->
+    <!-- ==================================================================== -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+      <ul class="nav nav-tabs fw-bold" id="mainTab" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active d-flex align-items-center gap-2" id="tab-inv-btn" data-bs-toggle="tab" data-bs-target="#tab-inventario" type="button" role="tab">
+            <i class="fa-solid fa-boxes-stacked text-primary"></i>
+            <span>📦 Inventario y Almacenes</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link d-flex align-items-center gap-2" id="tab-hist-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab" onclick="cargarHistorialMovimientos()">
+            <i class="fa-solid fa-clock-rotate-left text-info"></i>
+            <span>📋 Historial de Movimientos</span>
+          </button>
+        </li>
+        <li class="nav-item solo-admin" role="presentation" id="nav-item-gestion-admin">
+          <button class="nav-link d-flex align-items-center gap-2" id="tab-gest-btn" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button" role="tab">
+            <i class="fa-solid fa-user-shield text-danger"></i>
+            <span>⚙️ Gestión del Sistema</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="d-none d-xl-flex align-items-center gap-2 text-muted small helper-bar-pill">
+        <i class="fa-solid fa-circle-info text-info"></i>
+        <span>Use el botón de acción rápida <kbd class="bg-light text-dark border">⇄</kbd> en cada fila para operar un lote directamente.</span>
+      </div>
+    </div>
 
     <!-- CONTENIDO DE LAS PESTAÑAS -->
     <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom shadow-sm" id="mainTabContent">
@@ -211,14 +2022,17 @@
       <!-- PESTAÑA 1: 📦 INVENTARIO Y ALMACENES -->
       <div class="tab-pane fade show active" id="tab-inventario" role="tabpanel">
         
-        <!-- Pestañas Pills para cambiar de Almacén -->
-        <div class="mb-3">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="text-uppercase small fw-bold text-muted tracking-wider">
-              <i class="fa-solid fa-building me-1"></i> Seleccione la Sede / Almacén:
+        <!-- Selector de Sedes / Almacenes estilo Segmented Control Flotante -->
+        <div class="almacenes-selector-wrap mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1.5">
+              <i class="fa-solid fa-building-circle-check me-1"></i> SEDE ACTIVA
+            </span>
+            <span class="small fw-semibold text-secondary">
+              Seleccione el almacén para consultar y operar sus lotes:
             </span>
           </div>
-          <ul class="nav nav-pills gap-2 bg-light p-2 rounded-4 border shadow-xs flex-nowrap overflow-auto" id="pills-almacenes" role="tablist">
+          <ul class="nav nav-pills gap-1.5 flex-nowrap overflow-auto m-0" id="pills-almacenes" role="tablist">
             <li class="nav-item">
               <span class="nav-link text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando sedes...</span>
             </li>
@@ -226,66 +2040,90 @@
         </div>
 
         <!-- Vista Detallada del Almacén Activo -->
-        <div class="card border rounded-4 shadow-sm bg-white overflow-hidden mb-3">
-          <!-- Cabecera de Almacén con Filtros y Buscador -->
-          <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom">
+        <div class="card inv-warehouse-card overflow-hidden mb-2">
+          <!-- Cabecera de Almacén con Barra de Búsqueda y Filtros FEFO -->
+          <div class="card-header inv-toolbar-header">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div class="d-flex align-items-center gap-2.5">
-                <div class="rounded-3 bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="warehouse-icon-avatar d-flex align-items-center justify-content-center">
                   <i class="fa-solid fa-warehouse fs-5"></i>
                 </div>
                 <div>
-                  <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <h5 class="fw-bold mb-0 text-dark" id="almacen-activo-nombre">Almacén Central</h5>
-                    <span class="badge bg-light text-secondary border font-monospace" id="almacen-activo-codigo">ALM-1</span>
+                  <div class="d-flex align-items-center gap-2.5 flex-wrap">
+                    <h5 class="fw-bold mb-0 text-dark" id="almacen-activo-nombre" style="font-size: 1.2rem;">Almacén Central</h5>
+                    <span class="badge font-monospace" id="almacen-activo-codigo">ALM-1</span>
                   </div>
-                  <small class="text-muted" id="almacen-activo-direccion">Ubicación</small>
+                  <small class="text-muted d-flex align-items-center gap-1.5 mt-1 fw-medium">
+                    <i class="fa-solid fa-location-dot text-primary" style="font-size: 0.75rem;"></i>
+                    <span id="almacen-activo-direccion">Ubicación</span>
+                  </small>
                 </div>
               </div>
 
-              <div class="d-flex flex-wrap align-items-center gap-2">
+              <!-- Barra de Herramientas Unificada (Buscador + Selector FEFO + Actualizar) -->
+              <div class="inv-filter-toolbar d-flex flex-wrap align-items-center gap-2">
                 <!-- Buscador de stock -->
-                <div class="input-group input-group-sm" style="min-width: 240px;">
-                  <span class="input-group-text bg-light text-muted border-end-0">
+                <div class="input-group input-group-sm inv-search-group">
+                  <span class="input-group-text">
                     <i class="fa-solid fa-magnifying-glass"></i>
                   </span>
-                  <input type="text" id="filtro-buscar" class="form-control border-start-0 ps-0" placeholder="Buscar producto o lote...">
+                  <input type="text" id="filtro-buscar" class="form-control" placeholder="Buscar producto, SKU o lote...">
                 </div>
 
                 <!-- Filtro FEFO -->
                 <select id="filtro-fefo" class="form-select form-select-sm w-auto">
-                  <option value="">Todos los Lotes</option>
-                  <option value="critico">Próximos a Vencer (&le; 30 días)</option>
-                  <option value="proximo">Vencimiento Medio (&le; 90 días)</option>
-                  <option value="optimo">Vencimiento Óptimo (&gt; 90 días)</option>
-                  <option value="vencido">Lotes Vencidos</option>
+                  <option value="">Todos los Estados FEFO</option>
+                  <option value="critico">⚠️ Próximos a Vencer (&le; 30 días)</option>
+                  <option value="proximo">⏳ Vencimiento Medio (31 - 90 días)</option>
+                  <option value="optimo">✅ Vencimiento Óptimo (&gt; 90 días)</option>
+                  <option value="vencido">🚫 Lotes Vencidos</option>
                 </select>
 
                 <!-- Botón de Actualizar -->
-                <button id="btn-recargar-stock" class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" title="Actualizar datos">
+                <button id="btn-recargar-stock" class="btn btn-sm d-flex align-items-center gap-1.5 fw-bold" title="Actualizar datos de inventario" data-tooltip="Sincronizar stock en tiempo real">
                   <i class="fa-solid fa-rotate"></i>
                   <span class="d-none d-sm-inline">Actualizar</span>
+                </button>
+
+                <!-- Botón de Exportar Excel -->
+                <button id="btn-exportar-inventario-excel" type="button" class="btn btn-sm btn-export-excel d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'excel', this)" title="Exportar inventario consolidado a Excel (.xlsx)" data-tooltip="Descargar reporte Excel (.xlsx)">
+                  <i class="fa-solid fa-file-excel"></i>
+                  <span class="d-none d-md-inline">Excel</span>
+                </button>
+
+                <!-- Botón de Exportar PDF -->
+                <button id="btn-exportar-inventario-pdf" type="button" class="btn btn-sm btn-export-pdf d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'pdf', this)" title="Generar vista PDF imprimible del inventario" data-tooltip="Generar reporte PDF">
+                  <i class="fa-solid fa-file-pdf"></i>
+                  <span class="d-none d-md-inline">PDF</span>
                 </button>
               </div>
             </div>
           </div>
 
           <!-- Leyenda de Semáforo de Caducidad -->
-          <div class="px-3 px-md-4 py-2 bg-light border-bottom d-flex flex-wrap align-items-center gap-2 small">
-            <span class="fw-bold text-secondary me-1">Semáforo de Caducidad:</span>
-            <span class="badge badge-fefo-critico py-1 px-2"><i class="fa-solid fa-triangle-exclamation me-1"></i>Crítico (&le; 30 días)</span>
-            <span class="badge badge-fefo-proximo py-1 px-2"><i class="fa-solid fa-clock me-1"></i>Próximo (31 a 90 días)</span>
-            <span class="badge badge-fefo-optimo py-1 px-2"><i class="fa-solid fa-circle-check me-1"></i>Óptimo (&gt; 90 días)</span>
-            <span class="badge badge-fefo-vencido py-1 px-2"><i class="fa-solid fa-ban me-1"></i>Vencido</span>
+          <div class="fefo-legend-bar d-flex flex-wrap align-items-center justify-content-between gap-2 small">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="fw-bold text-secondary me-1 text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                <i class="fa-solid fa-traffic-light me-1 text-primary"></i>Semáforo FEFO:
+              </span>
+              <span class="badge badge-fefo-critico py-1.5 px-3 rounded-pill"><i class="fa-solid fa-triangle-exclamation me-1"></i>Crítico (&le; 30 días)</span>
+              <span class="badge badge-fefo-proximo py-1.5 px-3 rounded-pill"><i class="fa-solid fa-clock me-1"></i>Próximo (31 a 90 días)</span>
+              <span class="badge badge-fefo-optimo py-1.5 px-3 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Óptimo (&gt; 90 días)</span>
+              <span class="badge badge-fefo-vencido py-1.5 px-3 rounded-pill"><i class="fa-solid fa-ban me-1"></i>Vencido</span>
+            </div>
+            <span class="badge bg-light text-secondary border fw-semibold d-none d-md-inline-flex align-items-center gap-1.5 py-1.5 px-2.5 rounded-pill" style="font-size: 0.73rem;">
+              <i class="fa-solid fa-arrow-down-short-wide text-primary"></i>
+              <span>Prioridad automática por fecha de vencimiento</span>
+            </span>
           </div>
 
-          <!-- Tabla de Productos del Almacén -->
-          <div class="card-body p-0">
+          <!-- Tabla de Productos del Almacén (Filas Flotantes Minimalistas) -->
+          <div class="card-body inv-table-container">
             <div class="table-responsive">
               <table class="table table-hover align-middle mb-0" id="tabla-productos-almacen">
-                <thead class="table-light">
+                <thead>
                   <tr>
-                    <th class="ps-3 ps-md-4">Producto</th>
+                    <th class="ps-3 ps-md-4">Producto / Descripción</th>
                     <th>Código de Barras</th>
                     <th>Número de Lote</th>
                     <th>Vencimiento</th>
@@ -311,76 +2149,93 @@
 
       <!-- PESTAÑA 2: 📋 HISTORIAL DE MOVIMIENTOS -->
       <div class="tab-pane fade" id="tab-historial" role="tabpanel">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-          <div>
-            <h4 class="fw-bold m-0 text-primary d-flex align-items-center gap-2">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-              <span>📋 Historial de Movimientos</span>
-            </h4>
-            <small class="text-muted">Registro auditado de operaciones de entrada y despacho</small>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3 p-3 rounded-4 bg-light border">
+          <div class="d-flex align-items-center gap-3">
+            <div class="rounded-3 bg-info-subtle text-info p-2 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px;">
+              <i class="fa-solid fa-clock-rotate-left fs-5"></i>
+            </div>
+            <div>
+              <h5 class="fw-bold m-0 text-dark">Historial Auditado de Movimientos (Kardex)</h5>
+              <small class="text-muted">Trazabilidad completa de ingresos, despachos y usuarios responsables</small>
+            </div>
           </div>
 
           <div class="d-flex flex-wrap align-items-center gap-2">
             <!-- Buscador por texto -->
-            <div class="input-group input-group-sm" style="min-width: 240px;">
-              <span class="input-group-text bg-light text-muted border-end-0">
+            <div class="input-group input-group-sm" style="min-width: 250px;">
+              <span class="input-group-text bg-white text-muted border-end-0">
                 <i class="fa-solid fa-magnifying-glass"></i>
               </span>
               <input type="text" id="filtro-historial-texto" class="form-control border-start-0 ps-0" placeholder="Buscar producto, lote o almacén...">
             </div>
 
             <!-- Selector por tipo ENTRADA / SALIDA -->
-            <select id="filtro-historial-tipo" class="form-select form-select-sm w-auto">
+            <select id="filtro-historial-tipo" class="form-select form-select-sm w-auto fw-medium">
               <option value="">Todos los tipos</option>
               <option value="ENTRADA">📥 ENTRADA</option>
               <option value="SALIDA">📤 SALIDA</option>
             </select>
 
             <!-- Botón de Actualizar -->
-            <button class="btn btn-sm btn-outline-primary d-flex align-items-center gap-1.5" onclick="cargarHistorialMovimientos()">
+            <button class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 rounded-3 fw-semibold" onclick="cargarHistorialMovimientos()" title="Actualizar historial de auditoría" data-tooltip="Actualizar bitácora Kardex">
               <i class="fa-solid fa-rotate"></i>
               <span>Actualizar</span>
+            </button>
+
+            <!-- Botón de Exportar Auditoría Excel -->
+            <button id="btn-exportar-historial-excel" type="button" class="btn btn-sm btn-export-excel d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('historial', 'excel', this)" title="Exportar historial auditado a Excel (.xlsx)" data-tooltip="Exportar Kardex a Excel (.xlsx)">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Exportar Excel</span>
+            </button>
+
+            <!-- Botón de Exportar Auditoría PDF -->
+            <button id="btn-exportar-historial-pdf" type="button" class="btn btn-sm btn-export-pdf d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('historial', 'pdf', this)" title="Exportar historial auditado a PDF" data-tooltip="Exportar Kardex a PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>PDF</span>
             </button>
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-striped table-hover align-middle border">
-            <thead class="table-dark">
-              <tr>
-                <th>Fecha / Hora</th>
-                <th class="text-center">Tipo</th>
-                <th>Producto</th>
-                <th>Lote</th>
-                <th>Almacén</th>
-                <th class="text-end">Cantidad</th>
-                <th>Usuario Responsable</th>
-              </tr>
-            </thead>
-            <tbody id="tabla-historial-body">
-              <tr>
-                <td colspan="7" class="text-center text-muted">Cargando historial de movimientos...</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="card border rounded-4 overflow-hidden shadow-xs">
+          <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0" id="tabla-historial-auditoria">
+              <thead class="table-dark">
+                <tr>
+                  <th class="ps-3 ps-md-4">Fecha / Hora (DD/MM/AAAA)</th>
+                  <th class="text-center">Tipo Acción</th>
+                  <th>Producto</th>
+                  <th>Lote</th>
+                  <th>Proveedor / Trazabilidad</th>
+                  <th>Almacén</th>
+                  <th class="text-end">Cantidad</th>
+                  <th class="pe-3 pe-md-4">Usuario Responsable (Rol)</th>
+                </tr>
+              </thead>
+              <tbody id="tabla-historial-body">
+                <tr>
+                  <td colspan="8" class="text-center text-muted py-4">Cargando historial de movimientos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- PESTAÑA 3: ⚙️ GESTIÓN DEL SISTEMA (SOLO ADMIN) -->
       <div class="tab-pane fade" id="tab-gestion" role="tabpanel">
-        <div class="card border rounded-4 shadow-sm bg-white overflow-hidden mb-3">
-          <div class="card-header bg-white py-3 px-3 px-md-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div class="d-flex align-items-center gap-2.5">
-              <div class="rounded-3 bg-danger-subtle text-danger p-2 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+        <div class="card border rounded-4 shadow-sm bg-white overflow-hidden mb-2">
+          <div class="card-header bg-white py-3.5 px-3 px-md-4 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-3 bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px;">
                 <i class="fa-solid fa-users-gear fs-5"></i>
               </div>
               <div>
-                <h5 class="fw-bold mb-0 text-dark">Gestión y Creación de Usuarios</h5>
-                <small class="text-muted">Administración de accesos y asignación de roles del personal</small>
+                <h5 class="fw-bold mb-0 text-dark">Directorio de Usuarios y Control de Roles</h5>
+                <small class="text-muted">Administración ejecutiva de credenciales y permisos de acceso al WMS</small>
               </div>
             </div>
 
-            <button id="btn-abrir-modal-usuario" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 py-2 rounded-3 shadow-xs" data-bs-toggle="modal" data-bs-target="#modal-nuevo-usuario" style="background: #4f46e5; border-color: #4f46e5;">
+            <button id="btn-abrir-modal-usuario" class="btn btn-sm btn-primary d-flex align-items-center gap-2 px-3.5 py-2 rounded-3 shadow-xs fw-semibold" data-bs-toggle="modal" data-bs-target="#modal-nuevo-usuario" style="background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none;">
               <i class="fa-solid fa-user-plus"></i>
               <span>+ Registrar Nuevo Usuario</span>
             </button>
@@ -424,33 +2279,39 @@
   <div class="modal fade" id="modal-movimiento-lote" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            <div class="rounded-3 bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
-              <i class="fa-solid fa-arrow-right-arrow-left"></i>
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-3">
+            <div class="mov-modal-icon-box d-flex align-items-center justify-content-center">
+              <i class="fa-solid fa-arrow-right-arrow-left fs-5"></i>
             </div>
             <div>
-              <h5 class="modal-title fw-bold" id="movimiento-modal-title">Operación por Lote</h5>
-              <small class="text-muted">Actualización inmediata en inventario</small>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="modal-title mb-0" id="movimiento-modal-title">Operación de Stock por Lote</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.65rem;">FEFO &amp; Kardex</span>
+              </div>
+              <small class="text-muted d-block mt-0.5">Actualización inmediata en inventario y Kardex</small>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
 
         <form id="form-movimiento-lote">
           <div class="modal-body p-4">
             
-            <!-- Selector Tipo de Operación -->
+            <!-- Selector Tipo de Operación (Segmented Control de Alto Contraste) -->
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Tipo de Operación</label>
-              <div class="d-flex gap-2">
+              <label class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-sliders text-primary"></i>
+                <span>Tipo de Operación</span>
+              </label>
+              <div class="mov-segmented-control">
                 <input type="radio" class="btn-check" name="tipo_movimiento" id="tipo-entrada" value="ENTRADA" checked>
-                <label class="btn btn-outline-success flex-fill fw-bold py-2" for="tipo-entrada">
+                <label class="btn flex-fill" for="tipo-entrada">
                   <i class="fa-solid fa-arrow-down me-1"></i> Entrada (+)
                 </label>
 
                 <input type="radio" class="btn-check" name="tipo_movimiento" id="tipo-salida" value="SALIDA">
-                <label class="btn btn-outline-danger flex-fill fw-bold py-2" for="tipo-salida">
+                <label class="btn flex-fill" for="tipo-salida">
                   <i class="fa-solid fa-arrow-up me-1"></i> Salida / Despacho (-)
                 </label>
               </div>
@@ -458,7 +2319,10 @@
 
             <!-- Selector de Almacén -->
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Almacén Destino / Origen</label>
+              <label for="mov-id-almacen" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-warehouse text-primary"></i>
+                <span>Almacén Destino / Origen</span>
+              </label>
               <select class="form-select" id="mov-id-almacen" required>
                 <option value="">Seleccione el Almacén...</option>
               </select>
@@ -466,37 +2330,88 @@
 
             <!-- Selector de Producto -->
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Producto</label>
+              <label for="mov-id-producto" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-box text-primary"></i>
+                <span>Producto</span>
+              </label>
               <select class="form-select" id="mov-id-producto" required>
                 <option value="">Seleccione el Producto...</option>
               </select>
             </div>
 
-            <!-- Número de Lote -->
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Número de Lote</label>
-              <input type="text" class="form-control font-monospace" id="mov-numero-lote" placeholder="Ej: LOT-2026-A1" required>
+            <!-- Cuadrícula de Lote y Fecha de Vencimiento -->
+            <div class="row g-3 mb-3">
+              <!-- Número de Lote -->
+              <div class="col-sm-6">
+                <label for="mov-numero-lote" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                  <i class="fa-solid fa-tag text-primary"></i>
+                  <span>Número de Lote</span>
+                </label>
+                <input type="text" class="form-control font-monospace" id="mov-numero-lote" placeholder="Ej: LOT-2026-A1" required>
+              </div>
+
+              <!-- Fecha de Vencimiento (Obligatoria para Lote Nuevo en Entrada) -->
+              <div class="col-sm-6" id="campo-fecha-vencimiento">
+                <label for="mov-fecha-vencimiento" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                  <i class="fa-regular fa-calendar-check text-primary"></i>
+                  <span>Fecha de Vencimiento</span>
+                </label>
+                <input type="date" class="form-control" id="mov-fecha-vencimiento">
+              </div>
+              <div class="col-12 mt-1">
+                <small class="text-muted d-block" style="font-size: 0.74rem;">
+                  <i class="fa-solid fa-circle-info me-1 text-secondary"></i>La fecha de vencimiento es requerida cuando el lote ingresa por primera vez.
+                </small>
+              </div>
             </div>
 
-            <!-- Fecha de Vencimiento (Obligatoria para Lote Nuevo en Entrada) -->
-            <div class="mb-3" id="campo-fecha-vencimiento">
-              <label class="form-label small fw-bold text-muted text-uppercase">Fecha de Vencimiento</label>
-              <input type="date" class="form-control" id="mov-fecha-vencimiento">
-              <small class="text-muted" style="font-size: 0.75rem;">Requerida si el lote entra por primera vez.</small>
+            <!-- Módulo Básico de Proveedores / Origen de Mercancía (Opcional para Auditoría) -->
+            <div class="mb-3" id="campo-proveedor-origen">
+              <label class="form-label text-primary text-uppercase d-flex align-items-center justify-content-between mb-2">
+                <span id="label-proveedor-origen"><i class="fa-solid fa-truck-field me-1"></i> Proveedor / Origen de la Mercancía</span>
+                <span class="badge bg-white text-primary border border-primary-subtle rounded-pill" style="font-size: 0.65rem;">Trazabilidad</span>
+              </label>
+              <input
+                type="text"
+                class="form-control form-control-sm mb-2"
+                id="mov-proveedor"
+                list="lista-proveedores-wms"
+                placeholder="Seleccione o escriba el proveedor u origen (Opcional)..."
+                autocomplete="off">
+              <datalist id="lista-proveedores-wms">
+                <option value="Laboratorios Bagó"></option>
+                <option value="Bayer HealthCare"></option>
+                <option value="Pfizer Logística"></option>
+                <option value="Genfar S.A."></option>
+                <option value="Tecnoquímicas"></option>
+                <option value="Distribuidora Farmacéutica Nacional"></option>
+                <option value="Planta Central / Producción Interna"></option>
+              </datalist>
+
+              <input
+                type="text"
+                class="form-control form-control-sm"
+                id="mov-observacion"
+                placeholder="Nota de auditoría, N° Guía de Remisión o Factura (Opcional)..."
+                autocomplete="off">
             </div>
 
             <!-- Cantidad de Unidades -->
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Cantidad de Unidades</label>
-              <input type="number" class="form-control fw-bold fs-5 text-center" id="mov-cantidad" min="1" step="1" placeholder="0" required>
+            <div class="mov-quantity-box">
+              <label for="mov-cantidad" class="form-label text-uppercase d-flex align-items-center justify-content-between mb-1.5">
+                <span><i class="fa-solid fa-Hashtag text-primary me-1"></i>Cantidad de Unidades a Operar</span>
+                <span class="text-muted fw-normal" style="font-size: 0.7rem;">Mínimo: 1 ud</span>
+              </label>
+              <input type="number" class="form-control text-center" id="mov-cantidad" min="1" step="1" placeholder="0" required>
             </div>
 
           </div>
 
-          <div class="modal-footer border-top bg-light">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary px-4 fw-bold" id="btn-submit-movimiento">
-              <i class="fa-solid fa-check me-1"></i> Confirmar Operación
+          <div class="modal-footer">
+            <button type="button" class="btn btn-prod-cancel" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn d-inline-flex align-items-center gap-2" id="btn-submit-movimiento">
+              <i class="fa-solid fa-check"></i>
+              <span>Confirmar Operación</span>
             </button>
           </div>
         </form>
@@ -508,54 +2423,76 @@
   <div class="modal fade solo-admin" id="modal-nuevo-producto" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            <div class="rounded-3 bg-indigo text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px; background-color: #6366f1;">
-              <i class="fa-solid fa-box-open"></i>
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-3">
+            <div class="prod-modal-icon-box d-flex align-items-center justify-content-center">
+              <i class="fa-solid fa-box-open fs-5"></i>
             </div>
             <div>
-              <h5 class="modal-title fw-bold">Registrar Nuevo Producto</h5>
-              <small class="text-muted">Catálogo maestro general</small>
+              <div class="d-flex align-items-center gap-2">
+                <h5 class="modal-title mb-0">Registrar Nuevo Producto</h5>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill" style="font-size: 0.65rem;">SKU Maestro</span>
+              </div>
+              <small class="text-muted d-block mt-0.5">Alta en catálogo maestro corporativo</small>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
 
         <form id="form-nuevo-producto">
           <div class="modal-body p-4">
             
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Código de Barras</label>
+              <label for="prod-codigo" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-barcode text-primary"></i>
+                <span>Código de Barras / SKU</span>
+              </label>
               <input type="text" class="form-control font-monospace" id="prod-codigo" placeholder="Ej: 770123456789" required>
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Nombre del Producto</label>
+              <label for="prod-nombre" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-tag text-primary"></i>
+                <span>Nombre del Producto</span>
+              </label>
               <input type="text" class="form-control" id="prod-nombre" placeholder="Ej: Acetaminofén 500mg" required>
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Descripción</label>
-              <textarea class="form-control" id="prod-descripcion" rows="2" placeholder="Detalles o presentación"></textarea>
+              <label for="prod-descripcion" class="form-label text-uppercase d-flex align-items-center gap-1.5">
+                <i class="fa-solid fa-align-left text-primary"></i>
+                <span>Descripción / Presentación</span>
+              </label>
+              <textarea class="form-control" id="prod-descripcion" rows="2" placeholder="Detalles técnicos, unidad de empaque o presentación"></textarea>
             </div>
 
-            <div class="row g-2 mb-3">
-              <div class="col-6">
-                <label class="form-label small fw-bold text-muted text-uppercase">Precio Costo ($)</label>
-                <input type="number" class="form-control" id="prod-precio-costo" step="0.01" min="0" placeholder="0.00" required>
-              </div>
-              <div class="col-6">
-                <label class="form-label small fw-bold text-muted text-uppercase">Precio Venta ($)</label>
-                <input type="number" class="form-control" id="prod-precio-venta" step="0.01" min="0" placeholder="0.00" required>
+            <!-- Cuadrícula Equilibrada para Precios -->
+            <div class="prod-prices-grid-box mb-1">
+              <div class="row g-3">
+                <div class="col-6">
+                  <label for="prod-precio-costo" class="form-label text-uppercase mb-1.5">Precio Costo ($)</label>
+                  <div class="prod-price-input-wrap">
+                    <span class="prod-price-prefix">$</span>
+                    <input type="number" class="form-control" id="prod-precio-costo" step="0.01" min="0" placeholder="0.00" required>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label for="prod-precio-venta" class="form-label text-uppercase mb-1.5">Precio Venta ($)</label>
+                  <div class="prod-price-input-wrap">
+                    <span class="prod-price-prefix">$</span>
+                    <input type="number" class="form-control" id="prod-precio-venta" step="0.01" min="0" placeholder="0.00" required>
+                  </div>
+                </div>
               </div>
             </div>
 
           </div>
 
-          <div class="modal-footer border-top bg-light">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: #6366f1; border-color: #6366f1;">
-              <i class="fa-solid fa-floppy-disk me-1"></i> Guardar Producto
+          <div class="modal-footer">
+            <button type="button" class="btn btn-prod-cancel" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-prod-save d-inline-flex align-items-center gap-2">
+              <i class="fa-solid fa-floppy-disk"></i>
+              <span>Guardar Producto</span>
             </button>
           </div>
         </form>
@@ -567,56 +2504,74 @@
   <div class="modal fade solo-admin" id="modal-nuevo-usuario" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            <div class="rounded-3 bg-danger text-white p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+        <div class="modal-header">
+          <div class="d-flex align-items-center gap-3">
+            <div class="usr-modal-icon-box">
               <i class="fa-solid fa-user-plus"></i>
             </div>
             <div>
-              <h5 class="modal-title fw-bold">Registrar Nuevo Usuario</h5>
-              <small class="text-muted">Creación de cuenta y asignación de rol</small>
+              <h5 class="modal-title mb-0">Registrar Nuevo Usuario</h5>
+              <span class="usr-modal-subtitle">Creación de cuenta y asignación de rol operativo o ejecutivo</span>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
 
         <form id="form-nuevo-usuario">
           <div class="modal-body p-4">
-            
+
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Nombre Completo</label>
+              <label for="usr-nombre" class="form-label text-uppercase">
+                <i class="fa-regular fa-id-card text-primary"></i> Nombre Completo
+              </label>
               <input type="text" class="form-control" id="usr-nombre" placeholder="Ej: Carlos Gómez" required autocomplete="off">
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Correo Electrónico</label>
+              <label for="usr-email" class="form-label text-uppercase">
+                <i class="fa-regular fa-envelope text-primary"></i> Correo Electrónico
+              </label>
               <input type="email" class="form-control" id="usr-email" placeholder="carlos@almacen.com" required autocomplete="off">
             </div>
 
             <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Contraseña Inicial</label>
+              <label for="usr-password" class="form-label text-uppercase">
+                <i class="fa-solid fa-key text-primary"></i> Contraseña Inicial
+              </label>
               <input type="password" class="form-control" id="usr-password" placeholder="Mínimo 6 caracteres" required autocomplete="new-password">
             </div>
 
-            <div class="mb-3">
-              <label class="form-label small fw-bold text-muted text-uppercase">Rol Asignado</label>
-              <select class="form-select" id="usr-rol" required>
+            <div class="usr-role-select-box mt-3">
+              <label for="usr-rol" class="form-label text-uppercase">
+                <i class="fa-solid fa-user-shield text-primary"></i> Rol Asignado
+              </label>
+              <select class="form-select bg-white" id="usr-rol" required>
                 <option value="">Seleccione el rol...</option>
-                <option value="2">OPERARIO (Operaciones de entrada, salida y consulta de stock)</option>
-                <option value="1">ADMIN (Control total, creación de productos y gestión)</option>
+                <option value="2">OPERARIO (Operaciones ágiles de entrada, salida y consulta de stock)</option>
+                <option value="1">ADMIN (Control ejecutivo total, catálogo de productos y usuarios)</option>
               </select>
             </div>
 
           </div>
 
-          <div class="modal-footer border-top bg-light">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-primary px-4 fw-bold" style="background-color: #4f46e5; border-color: #4f46e5;">
-              <i class="fa-solid fa-user-check me-1"></i> Guardar Usuario
+          <div class="modal-footer">
+            <button type="button" class="btn btn-usr-cancel" data-bs-dismiss="modal">Cancelar</button>
+            <button type="submit" class="btn btn-usr-save d-inline-flex align-items-center gap-2">
+              <i class="fa-solid fa-user-check"></i>
+              <span>Guardar Usuario</span>
             </button>
           </div>
         </form>
       </div>
+    </div>
+  </div>
+
+  <!-- Indicador Visual Flotante de Carga en Exportaciones (Spinner / Toast) -->
+  <div id="wms-export-toast" class="wms-export-toast" role="status" aria-live="polite">
+    <div class="spinner-border spinner-border-sm text-info flex-shrink-0" role="status"></div>
+    <div>
+      <div class="fw-bold small text-white" id="wms-export-toast-title">Generando reporte, por favor espere...</div>
+      <div class="text-white-50" style="font-size: 0.74rem;" id="wms-export-toast-subtitle">Procesando datos consolidados de almacén y auditoría</div>
     </div>
   </div>
 
