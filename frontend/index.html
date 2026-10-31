@@ -19,6 +19,7 @@
   <!-- SweetAlert2 CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
+  <link rel="stylesheet" href="dashboard.css">
   <style>
     /* ==========================================================================
        1. VARIABLES GLOBALES Y SISTEMA DE DISEÑO (DESIGN TOKENS)
@@ -2018,6 +2019,70 @@
 
     <!-- CONTENIDO DE LAS PESTAÑAS -->
     <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom shadow-sm" id="mainTabContent">
+      <div class="tab-pane fade" id="tab-dashboard" role="tabpanel" aria-labelledby="tab-dashboard-btn" tabindex="0">
+        <section class="dashboard" aria-label="Resumen de inventario y almacenes">
+          <div class="dash-header">
+            <div>
+              <span class="dash-eyebrow">Vista general de operaciones</span>
+              <h2>Dashboard de inventario</h2>
+              <p class="dash-muted mb-1">Tus existencias, movimientos y prioridades en un solo lugar.</p>
+              <div class="dash-muted" id="dashboard-updated">Los datos se cargarán al abrir esta pestaña.</div>
+            </div>
+            <div class="dash-controls">
+              <div class="dash-select-wrap">
+                <label for="dashboard-warehouse">Almacén</label>
+                <select id="dashboard-warehouse" class="form-select form-select-sm"><option value="">Todos los almacenes</option></select>
+              </div>
+              <button type="button" id="dashboard-refresh" class="btn dash-refresh d-flex align-items-center gap-2"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualizar</button>
+            </div>
+          </div>
+          <div id="dashboard-status" class="dash-status" role="status" aria-live="polite">Abre el dashboard para consultar los datos.</div>
+          <div id="dashboard-content" hidden aria-busy="false">
+            <div class="dash-stats">
+              <article class="dash-card">
+                <div class="dash-stat-top"><span>Productos con stock</span><span class="dash-icon"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i></span></div>
+                <strong id="dashboard-products" class="dash-value">0</strong><span class="dash-muted">Productos distintos con existencias</span>
+              </article>
+              <article class="dash-card">
+                <div class="dash-stat-top"><span>Unidades disponibles</span><span class="dash-icon"><i class="fa-solid fa-cubes" aria-hidden="true"></i></span></div>
+                <strong id="dashboard-units" class="dash-value">0</strong><span class="dash-muted">Stock registrado, incluidos vencidos</span>
+              </article>
+              <article class="dash-card">
+                <div class="dash-stat-top"><span>Lotes próximos a vencer</span><span class="dash-icon warning"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
+                <strong id="dashboard-soon" class="dash-value">0</strong><span class="dash-muted">Con stock · vencen entre hoy y 30 días</span>
+              </article>
+              <article class="dash-card">
+                <div class="dash-stat-top"><span>Lotes vencidos</span><span class="dash-icon danger"><i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i></span></div>
+                <strong id="dashboard-expired" class="dash-value">0</strong><span class="dash-muted">Lotes únicos que aún tienen stock</span>
+              </article>
+            </div>
+            <div class="dash-grid">
+              <article class="dash-card">
+                <h3>Entradas y salidas recientes</h3>
+                <p class="dash-muted mb-0">Últimos 7 días · unidades por día · hora de Lima</p>
+                <div id="dashboard-flow-chart" class="dash-chart"></div>
+                <p id="dashboard-flow-summary" class="dash-muted dash-data-summary mb-2"></p>
+                <p class="dash-muted mb-0"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Máximo los últimos 100 registros globales de la API. Puede no incluir toda la actividad del período o almacén seleccionado.</p>
+              </article>
+              <article class="dash-card">
+                <h3>Distribución de stock por almacén</h3>
+                <p class="dash-muted mb-0">Unidades actuales · según el filtro seleccionado</p>
+                <div id="dashboard-stock-chart" class="dash-chart"></div>
+              </article>
+            </div>
+            <article class="dash-card mb-4">
+              <h3>Alertas de vencimiento</h3>
+              <p id="dashboard-alert-count" class="dash-muted mb-0"></p>
+              <div id="dashboard-alerts" class="dash-alert-list"></div>
+            </article>
+            <article class="dash-card">
+              <h3>Últimos movimientos</h3>
+              <p class="dash-muted mb-3">Hasta 10 operaciones de la selección, entre los últimos 100 registros globales.</p>
+              <div id="dashboard-movements"></div>
+            </article>
+          </div>
+        </section>
+      </div>
       
       <!-- PESTAÑA 1: 📦 INVENTARIO Y ALMACENES -->
       <div class="tab-pane fade show active" id="tab-inventario" role="tabpanel">
@@ -2583,5 +2648,6 @@
 
   <!-- Lógica de la Aplicación -->
   <script src="app.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
