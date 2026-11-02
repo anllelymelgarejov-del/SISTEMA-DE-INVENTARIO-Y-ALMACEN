@@ -101,6 +101,7 @@ function verificarYConfigurarSesion() {
 
 function renderizarSegunRol() {
   const rol = (estadoApp.usuario?.rol || localStorage.getItem('rol') || 'OPERARIO').toUpperCase();
+  document.body.classList.toggle('vista-operario', rol === 'OPERARIO');
   const elementoRol = document.getElementById('user-rol');
 
   if (elementoRol) {

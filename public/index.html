@@ -99,6 +99,585 @@
       color: var(--inv-primary) !important;
       border-color: #dee2e6 #dee2e6 #ffffff;
     }
+
+    .operator-dashboard {
+      margin-bottom: 1.5rem;
+      padding: clamp(1.25rem, 3vw, 2rem);
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      background:
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.12), transparent 34%),
+        linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+      animation: operator-dashboard-enter 0.45s ease-out both;
+    }
+
+    .operator-dashboard-heading {
+      color: #1e293b;
+      font-size: clamp(1.35rem, 2vw, 1.75rem);
+      font-weight: 700;
+      letter-spacing: -0.035em;
+    }
+
+    .operator-dashboard-copy {
+      max-width: 42rem;
+      color: #64748b;
+    }
+
+    .operator-action-card {
+      display: flex;
+      min-height: 7rem;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.15rem 1.25rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      background: #fff;
+      color: #0f172a;
+      text-align: left;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    .operator-action-card:hover,
+    .operator-action-card:focus-visible {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+      color: #0f172a;
+    }
+
+    .operator-action-card:focus-visible {
+      outline: 3px solid rgba(16, 185, 129, 0.3);
+      outline-offset: 2px;
+    }
+
+    .operator-action-card--entry:hover {
+      border-color: #10b981;
+    }
+
+    .operator-action-card--exit:hover {
+      border-color: #f97316;
+    }
+
+    .operator-action-card--search:hover {
+      border-color: #1e293b;
+    }
+
+    .operator-action-icon {
+      display: inline-flex;
+      width: 3.25rem;
+      height: 3.25rem;
+      flex: 0 0 3.25rem;
+      align-items: center;
+      justify-content: center;
+      border-radius: 1rem;
+      font-size: 1.25rem;
+    }
+
+    .operator-action-card--entry .operator-action-icon {
+      background: #d1fae5;
+      color: #059669;
+    }
+
+    .operator-action-card--exit .operator-action-icon {
+      background: #ffedd5;
+      color: #ea580c;
+    }
+
+    .operator-action-card--search .operator-action-icon {
+      background: #e2e8f0;
+      color: #1e293b;
+    }
+
+    .operator-action-title {
+      display: block;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .operator-action-description {
+      display: block;
+      margin-top: 0.2rem;
+      color: #64748b;
+      font-size: 0.875rem;
+      font-weight: 400;
+    }
+
+    @keyframes operator-dashboard-enter {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .operator-dashboard,
+      .operator-action-card {
+        animation: none;
+        transition: none;
+      }
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-content {
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: 1.25rem;
+      box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2);
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+      background: #1e293b;
+      color: #fff;
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-header .text-muted {
+      color: #cbd5e1 !important;
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-header .btn-close {
+      filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-header .bg-primary {
+      background: #334155 !important;
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-body {
+      padding: 1.5rem;
+      background: #f8fafc;
+    }
+
+    body.vista-operario #modal-movimiento-lote .form-label {
+      margin-bottom: 0.5rem;
+      color: #334155 !important;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.035em;
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-body .mb-3 {
+      margin-bottom: 1.2rem !important;
+    }
+
+    body.vista-operario #modal-movimiento-lote .form-control,
+    body.vista-operario #modal-movimiento-lote .form-select {
+      min-height: 3.1rem;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      background-color: #fff;
+      color: #0f172a;
+      font-size: 0.95rem;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    body.vista-operario #modal-movimiento-lote .form-control:focus,
+    body.vista-operario #modal-movimiento-lote .form-select:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 0.22rem rgba(16, 185, 129, 0.16);
+    }
+
+    body.vista-operario #modal-movimiento-lote .btn-check + .btn {
+      min-height: 3.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-width: 1px;
+      border-radius: 0.8rem;
+      font-size: 0.95rem;
+      transition: background-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    body.vista-operario #modal-movimiento-lote #tipo-entrada + label {
+      border-color: #a7f3d0;
+      background: #ecfdf5;
+      color: #047857;
+    }
+
+    body.vista-operario #modal-movimiento-lote #tipo-entrada:checked + label {
+      border-color: #10b981;
+      background: #10b981;
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(16, 185, 129, 0.22);
+    }
+
+    body.vista-operario #modal-movimiento-lote #tipo-salida + label {
+      border-color: #fed7aa;
+      background: #fff7ed;
+      color: #c2410c;
+    }
+
+    body.vista-operario #modal-movimiento-lote #tipo-salida:checked + label {
+      border-color: #f97316;
+      background: #f97316;
+      color: #fff;
+      box-shadow: 0 5px 14px rgba(249, 115, 22, 0.22);
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-footer {
+      gap: 0.65rem;
+      padding: 1rem 1.5rem;
+      background: #fff !important;
+    }
+
+    body.vista-operario #modal-movimiento-lote .modal-footer .btn {
+      min-height: 3rem;
+      border-radius: 0.75rem;
+      font-weight: 700;
+    }
+
+    body.vista-operario #modal-movimiento-lote #btn-submit-movimiento {
+      border-color: #10b981;
+      background: #10b981;
+      box-shadow: 0 5px 14px rgba(16, 185, 129, 0.2);
+    }
+
+    body.vista-operario #modal-movimiento-lote #btn-submit-movimiento:hover {
+      border-color: #059669;
+      background: #059669;
+    }
+
+    body.vista-operario #modal-movimiento-lote:has(#tipo-salida:checked) #btn-submit-movimiento {
+      border-color: #f97316;
+      background: #f97316;
+      box-shadow: 0 5px 14px rgba(249, 115, 22, 0.2);
+    }
+
+    body.vista-operario #modal-movimiento-lote:has(#tipo-salida:checked) #btn-submit-movimiento:hover {
+      border-color: #ea580c;
+      background: #ea580c;
+    }
+
+    @media (max-width: 575.98px) {
+      body.vista-operario #modal-movimiento-lote .modal-dialog {
+        margin: 0.75rem;
+      }
+
+      body.vista-operario #modal-movimiento-lote .modal-body,
+      body.vista-operario #modal-movimiento-lote .modal-header {
+        padding: 1.15rem;
+      }
+
+      body.vista-operario #modal-movimiento-lote .modal-footer {
+        padding: 0.85rem 1.15rem;
+      }
+
+      body.vista-operario #modal-movimiento-lote .modal-footer .btn {
+        flex: 1 1 auto;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.vista-operario #modal-movimiento-lote .btn-check + .btn {
+        transition: none;
+      }
+    }
+
+    body.vista-operario #tab-inventario .card:has(#tabla-productos-almacen) {
+      border-color: #e2e8f0 !important;
+      border-radius: 1.1rem !important;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.07) !important;
+    }
+
+    body.vista-operario #tab-inventario .card:has(#tabla-productos-almacen) > .card-header {
+      padding-top: 1.15rem !important;
+      padding-bottom: 1.15rem !important;
+    }
+
+    body.vista-operario .operator-inventory-search {
+      min-width: min(100%, 21rem) !important;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.8rem;
+      background: #fff;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
+    }
+
+    body.vista-operario .operator-inventory-search:focus-within {
+      border-color: #10b981;
+      box-shadow: 0 0 0 0.22rem rgba(16, 185, 129, 0.14);
+    }
+
+    body.vista-operario .operator-inventory-search .input-group-text {
+      padding-inline: 0.9rem;
+      border: 0;
+      border-radius: 0.8rem 0 0 0.8rem;
+      background: #fff !important;
+      color: #64748b !important;
+      font-size: 1rem;
+    }
+
+    body.vista-operario .operator-inventory-search .form-control {
+      min-height: 3rem;
+      border: 0;
+      border-radius: 0 0.8rem 0.8rem 0;
+      background: transparent;
+      color: #0f172a;
+      font-size: 0.95rem;
+      box-shadow: none;
+    }
+
+    body.vista-operario #filtro-fefo {
+      min-height: 3rem;
+      border-color: #cbd5e1;
+      border-radius: 0.75rem;
+      color: #334155;
+    }
+
+    body.vista-operario #btn-recargar-stock {
+      min-height: 3rem;
+      padding-inline: 1rem;
+      border-radius: 0.75rem;
+      font-weight: 600;
+    }
+
+    body.vista-operario #tabla-productos-almacen {
+      --bs-table-bg: #fff;
+      --bs-table-hover-bg: #ecfdf5;
+      --bs-table-color: #0f172a;
+      margin-bottom: 0;
+    }
+
+    body.vista-operario #tabla-productos-almacen thead th {
+      padding-top: 0.95rem;
+      padding-bottom: 0.95rem;
+      border-color: #334155;
+      background: #1e293b;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.035em;
+      white-space: nowrap;
+    }
+
+    body.vista-operario #tabla-productos-almacen tbody tr:nth-child(odd) {
+      --bs-table-bg: #f8fafc;
+    }
+
+    body.vista-operario #tabla-productos-almacen tbody tr {
+      transition: background-color 0.16s ease;
+    }
+
+    body.vista-operario #tabla-productos-almacen tbody tr:hover {
+      --bs-table-bg: #ecfdf5;
+      --bs-table-hover-bg: #ecfdf5;
+    }
+
+    body.vista-operario #tabla-productos-almacen tbody td {
+      padding-top: 0.9rem;
+      padding-bottom: 0.9rem;
+      border-color: #e2e8f0;
+    }
+
+    body.vista-operario #tabla-productos-almacen tbody td:nth-child(5) {
+      color: #059669 !important;
+      font-size: 1rem !important;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    body.vista-operario #tabla-productos-almacen .badge-fefo-optimo {
+      border-color: #a7f3d0;
+      background: #d1fae5;
+      color: #047857;
+    }
+
+    body.vista-operario #tabla-productos-almacen .badge-fefo-proximo {
+      border-color: #fde68a;
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    body.vista-operario #tabla-productos-almacen .badge-fefo-critico,
+    body.vista-operario #tabla-productos-almacen .badge-fefo-vencido {
+      border-color: #fecaca;
+      background: #fee2e2;
+      color: #b91c1c;
+    }
+
+    body.vista-operario #tabla-productos-almacen .btn-operar-item {
+      min-width: 2.5rem;
+      min-height: 2.5rem;
+      border-color: #fed7aa;
+      border-radius: 0.7rem;
+      background: #fff7ed;
+      color: #ea580c;
+    }
+
+    body.vista-operario #tabla-productos-almacen .btn-operar-item:hover {
+      border-color: #f97316;
+      background: #f97316;
+      color: #fff;
+    }
+
+    @media (max-width: 575.98px) {
+      body.vista-operario .operator-inventory-search {
+        width: 100%;
+      }
+
+      body.vista-operario #filtro-fefo {
+        width: 100% !important;
+      }
+
+      body.vista-operario #tabla-productos-almacen tbody td {
+        padding-inline: 0.75rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.vista-operario #tabla-productos-almacen tbody tr {
+        transition: none;
+      }
+    }
+
+    body.vista-operario #tab-historial > .d-flex {
+      padding: clamp(1rem, 2.5vw, 1.5rem);
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    }
+
+    body.vista-operario #tab-historial h4 {
+      color: #1e293b !important;
+      font-size: 1.25rem;
+    }
+
+    body.vista-operario #tab-historial .operator-history-search {
+      min-width: min(100%, 22rem) !important;
+      border: 1px solid #cbd5e1;
+      border-radius: 0.75rem;
+      background: #fff;
+    }
+
+    body.vista-operario #tab-historial .operator-history-search:focus-within {
+      border-color: #10b981;
+      box-shadow: 0 0 0 0.2rem rgba(16, 185, 129, 0.14);
+    }
+
+    body.vista-operario #tab-historial .operator-history-search .input-group-text {
+      border: 0;
+      border-radius: 0.75rem 0 0 0.75rem;
+      background: #fff !important;
+      color: #64748b !important;
+    }
+
+    body.vista-operario #tab-historial .operator-history-search .form-control {
+      min-height: 2.75rem;
+      border: 0;
+      border-radius: 0 0.75rem 0.75rem 0;
+      box-shadow: none;
+    }
+
+    body.vista-operario #filtro-historial-tipo {
+      min-height: 2.75rem;
+      border-color: #cbd5e1;
+      border-radius: 0.75rem;
+      color: #334155;
+    }
+
+    body.vista-operario #tab-historial .table-responsive {
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    body.vista-operario #tab-historial table {
+      --bs-table-bg: #fff;
+      --bs-table-hover-bg: #f0fdf4;
+      --bs-table-color: #0f172a;
+      margin-bottom: 0;
+    }
+
+    body.vista-operario #tab-historial thead th {
+      padding: 0.95rem 1rem;
+      border-color: #334155;
+      background: #1e293b;
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.025em;
+      white-space: nowrap;
+    }
+
+    body.vista-operario #tab-historial tbody tr:nth-child(odd) {
+      --bs-table-bg: #f8fafc;
+    }
+
+    body.vista-operario #tab-historial tbody tr {
+      transition: background-color 0.16s ease;
+    }
+
+    body.vista-operario #tab-historial tbody tr:hover {
+      --bs-table-bg: #f0fdf4;
+      --bs-table-hover-bg: #f0fdf4;
+    }
+
+    body.vista-operario #tab-historial tbody td {
+      padding: 0.9rem 1rem;
+      border-color: #e2e8f0;
+      vertical-align: middle;
+    }
+
+    body.vista-operario #tab-historial tbody td:first-child {
+      color: #475569;
+      font-size: 0.875rem;
+      white-space: nowrap;
+    }
+
+    body.vista-operario #tab-historial tbody td:nth-child(6) {
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    body.vista-operario #tab-historial tbody td:nth-child(6).text-success {
+      color: #059669 !important;
+      font-weight: 800;
+    }
+
+    body.vista-operario #tab-historial tbody td:nth-child(6).text-danger {
+      color: #f97316 !important;
+      font-weight: 800;
+    }
+
+    body.vista-operario #tab-historial .badge.bg-success {
+      background: #10b981 !important;
+      color: #fff;
+    }
+
+    body.vista-operario #tab-historial .badge.bg-danger {
+      background: #f97316 !important;
+      color: #fff;
+    }
+
+    @media (max-width: 575.98px) {
+      body.vista-operario #tab-historial .operator-history-search {
+        width: 100%;
+      }
+
+      body.vista-operario #filtro-historial-tipo {
+        width: 100%;
+      }
+
+      body.vista-operario #tab-historial thead th,
+      body.vista-operario #tab-historial tbody td {
+        padding-inline: 0.75rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.vista-operario #tab-historial tbody tr {
+        transition: none;
+      }
+    }
   </style>
 </head>
 <body>
@@ -135,17 +714,6 @@
           <button id="btn-nuevo-producto-nav" class="btn btn-sm btn-primary d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto" style="background: #6366f1; border-color: #6366f1;">
             <i class="fa-solid fa-plus"></i>
             <span>+ Nuevo Producto</span>
-          </button>
-
-          <!-- BOTONES OPERATIVOS RÁPIDOS (EXCLUSIVOS 'OPERARIO') -->
-          <button id="btn-operario-entrada" class="btn btn-sm btn-success d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
-            <i class="fa-solid fa-arrow-down"></i>
-            <span>📥 Registrar Entrada</span>
-          </button>
-
-          <button id="btn-operario-salida" class="btn btn-sm btn-danger d-flex align-items-center gap-1.5 px-3 py-1.5 rounded-3 shadow-xs solo-operario">
-            <i class="fa-solid fa-arrow-up"></i>
-            <span>📤 Registrar Salida / Despacho</span>
           </button>
 
           <!-- BOTÓN GENERAL ADMIN: Entrada / Salida por Lote -->
@@ -210,6 +778,57 @@
       
       <!-- PESTAÑA 1: 📦 INVENTARIO Y ALMACENES -->
       <div class="tab-pane fade show active" id="tab-inventario" role="tabpanel">
+
+        <!-- Accesos rápidos del operario -->
+        <section class="operator-dashboard solo-operario" aria-labelledby="operator-dashboard-title">
+          <div class="mb-4">
+            <span class="badge rounded-pill text-bg-success-subtle text-success-emphasis px-3 py-2 mb-3">
+              <i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>
+              Panel de operación
+            </span>
+            <h1 class="operator-dashboard-heading mb-2" id="operator-dashboard-title">¡Buen día! ¿Qué necesitas hacer?</h1>
+            <p class="operator-dashboard-copy mb-0">Accede rápidamente a las tareas principales de tu almacén.</p>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-12 col-md-6 col-xl-4">
+              <button id="btn-operario-entrada" class="operator-action-card operator-action-card--entry w-100 h-100" type="button">
+                <span class="operator-action-icon" aria-hidden="true">
+                  <i class="fa-solid fa-arrow-down"></i>
+                </span>
+                <span>
+                  <span class="operator-action-title">Registrar entrada</span>
+                  <span class="operator-action-description">Recibir productos en el almacén</span>
+                </span>
+                <i class="fa-solid fa-chevron-right ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="col-12 col-md-6 col-xl-4">
+              <button id="btn-operario-salida" class="operator-action-card operator-action-card--exit w-100 h-100" type="button">
+                <span class="operator-action-icon" aria-hidden="true">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </span>
+                <span>
+                  <span class="operator-action-title">Registrar salida</span>
+                  <span class="operator-action-description">Despachar productos del almacén</span>
+                </span>
+                <i class="fa-solid fa-chevron-right ms-auto text-secondary" aria-hidden="true"></i>
+              </button>
+            </div>
+            <div class="col-12 col-xl-4">
+              <a class="operator-action-card operator-action-card--search h-100" href="#filtro-buscar">
+                <span class="operator-action-icon" aria-hidden="true">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </span>
+                <span>
+                  <span class="operator-action-title">Consultar inventario</span>
+                  <span class="operator-action-description">Buscar productos y revisar existencias</span>
+                </span>
+                <i class="fa-solid fa-chevron-right ms-auto text-secondary" aria-hidden="true"></i>
+              </a>
+            </div>
+          </div>
+        </section>
         
         <!-- Pestañas Pills para cambiar de Almacén -->
         <div class="mb-3">
@@ -245,7 +864,7 @@
 
               <div class="d-flex flex-wrap align-items-center gap-2">
                 <!-- Buscador de stock -->
-                <div class="input-group input-group-sm" style="min-width: 240px;">
+                <div class="input-group input-group-sm operator-inventory-search" style="min-width: 240px;">
                   <span class="input-group-text bg-light text-muted border-end-0">
                     <i class="fa-solid fa-magnifying-glass"></i>
                   </span>
@@ -322,7 +941,7 @@
 
           <div class="d-flex flex-wrap align-items-center gap-2">
             <!-- Buscador por texto -->
-            <div class="input-group input-group-sm" style="min-width: 240px;">
+            <div class="input-group input-group-sm operator-history-search" style="min-width: 240px;">
               <span class="input-group-text bg-light text-muted border-end-0">
                 <i class="fa-solid fa-magnifying-glass"></i>
               </span>
