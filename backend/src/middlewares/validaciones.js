@@ -36,7 +36,7 @@ const respuestaError = (res, statusCode, codigo, mensaje, detalles = null) => {
  * b) Transferencia / Salida por Lote: Consulta stock en la posición específica (id_ubicacion_origen + id_lote).
  */
 const validarStockDisponible = async (req, res, next) => {
-  const { id_producto, cantidad_solicitada, cantidad, id_lote, id_ubicacion_origen } = req.body;
+  const { id_producto, cantidad_solicitada, cantidad, id_lote, id_ubicacion_origen, id_almacen } = req.body || {};
 
   try {
     // -------------------------------------------------------------
@@ -67,7 +67,7 @@ const validarStockDisponible = async (req, res, next) => {
       // Consultar stock disponible únicamente en lotes NO vencidos
       const queryStockFefo = `
         SELECT COALESCE(SUM(iu.cantidad), 0)::int AS stock_disponible
-        FROM inventario_ubicaciones iu
+        FROM inventario iu
         INNER JOIN lotes l ON iu.id_lote = l.id_lote
         WHERE iu.id_producto = $1 
           AND iu.cantidad > 0
@@ -96,13 +96,14 @@ const validarStockDisponible = async (req, res, next) => {
     }
 
     // -------------------------------------------------------------
-    // Caso B: Transferencia o Salida específica de un lote y ubicación
+    // Caso B: Transferencia o Salida específica de un lote y almacén/ubicación
     // -------------------------------------------------------------
-    if (id_lote && id_ubicacion_origen && cantidad !== undefined) {
+    const origenId = id_ubicacion_origen || id_almacen;
+    if (id_lote && origenId && cantidad !== undefined) {
       const cantMover = parseInt(cantidad, 10);
       const prodId = parseInt(id_producto, 10);
       const loteId = parseInt(id_lote, 10);
-      const ubiOrigenId = parseInt(id_ubicacion_origen, 10);
+      const ubiOrigenId = parseInt(origenId, 10);
 
       if (isNaN(cantMover) || cantMover <= 0) {
         return respuestaError(
@@ -115,8 +116,8 @@ const validarStockDisponible = async (req, res, next) => {
 
       const queryStockUbicacion = `
         SELECT COALESCE(cantidad, 0)::int AS stock_posicion
-        FROM inventario_ubicaciones
-        WHERE id_producto = $1 AND id_lote = $2 AND id_ubicacion = $3;
+        FROM inventario
+        WHERE id_producto = $1 AND id_lote = $2 AND id_almacen = $3;
       `;
       const resStockUbi = await pool.query(queryStockUbicacion, [prodId, loteId, ubiOrigenId]);
 
@@ -162,8 +163,8 @@ const validarStockDisponible = async (req, res, next) => {
  * Si supera 'capacidad_maxima', rechaza con HTTP 400.
  */
 const validarCapacidadUbicacion = async (req, res, next) => {
-  const idUbicacionDestino = req.body.id_ubicacion_destino || req.body.id_ubicacion;
-  const cantidadNueva = parseInt(req.body.cantidad, 10);
+  const idUbicacionDestino = req.body?.id_ubicacion_destino || req.body?.id_ubicacion || req.body?.id_almacen;
+  const cantidadNueva = parseInt(req.body?.cantidad, 10);
 
   if (!idUbicacionDestino || isNaN(cantidadNueva) || cantidadNueva <= 0) {
     // Si no vienen estos campos, los validadores de formato de payload responderán
@@ -173,11 +174,11 @@ const validarCapacidadUbicacion = async (req, res, next) => {
   const ubicId = parseInt(idUbicacionDestino, 10);
 
   try {
-    // 1. Obtener la capacidad máxima y estado de la ubicación
+    // 1. Verificar existencia del almacén en el esquema vigente
     const queryUbicacion = `
-      SELECT id_ubicacion, codigo_ubicacion, capacidad_maxima, activo
-      FROM ubicaciones
-      WHERE id_ubicacion = $1;
+      SELECT id_almacen AS id_ubicacion, codigo AS codigo_ubicacion, nombre
+      FROM almacenes
+      WHERE id_almacen = $1;
     `;
     const resUbic = await pool.query(queryUbicacion, [ubicId]);
 
@@ -186,52 +187,8 @@ const validarCapacidadUbicacion = async (req, res, next) => {
         res,
         404,
         'ERROR_UBICACION_NO_ENCONTRADA',
-        `La ubicación física con ID ${ubicId} no existe en el sistema.`
+        `El almacén o ubicación física con ID ${ubicId} no existe en el sistema.`
       );
-    }
-
-    const ubicacion = resUbic.rows[0];
-
-    if (!ubicacion.activo) {
-      return respuestaError(
-        res,
-        400,
-        'ERROR_UBICACION_INACTIVA',
-        `La ubicación [${ubicacion.codigo_ubicacion}] está inactiva y no puede recibir mercancía.`
-      );
-    }
-
-    // Si la ubicación tiene definida una capacidad máxima mayor a cero
-    if (ubicacion.capacidad_maxima !== null && Number(ubicacion.capacidad_maxima) > 0) {
-      const capMaxima = Number(ubicacion.capacidad_maxima);
-
-      // 2. Calcular la suma del stock actual ocupado en esa ubicación física
-      const queryStockActual = `
-        SELECT COALESCE(SUM(cantidad), 0)::numeric AS stock_total_ocupado
-        FROM inventario_ubicaciones
-        WHERE id_ubicacion = $1;
-      `;
-      const resStock = await pool.query(queryStockActual, [ubicId]);
-      const stockOcupado = Number(resStock.rows[0].stock_total_ocupado);
-
-      const stockProyectado = stockOcupado + cantidadNueva;
-
-      if (stockProyectado > capMaxima) {
-        return respuestaError(
-          res,
-          400,
-          'ERROR_CAPACIDAD_EXCEDIDA',
-          'La ubicación destino supera su capacidad máxima permitida',
-          {
-            codigo_ubicacion: ubicacion.codigo_ubicacion,
-            capacidad_maxima: capMaxima,
-            stock_actual_ocupado: stockOcupado,
-            cantidad_a_ingresar: cantidadNueva,
-            stock_proyectado: stockProyectado,
-            exceso_unidades: stockProyectado - capMaxima,
-          }
-        );
-      }
     }
 
     return next();
@@ -312,7 +269,7 @@ const validarEstadoLote = async (req, res, next) => {
         SELECT 
           COUNT(*) FILTER (WHERE l.fecha_vencimiento < CURRENT_DATE AND iu.cantidad > 0)::int AS lotes_vencidos,
           COUNT(*) FILTER (WHERE l.fecha_vencimiento >= CURRENT_DATE AND iu.cantidad > 0)::int AS lotes_vigentes
-        FROM inventario_ubicaciones iu
+        FROM inventario iu
         INNER JOIN lotes l ON iu.id_lote = l.id_lote
         WHERE iu.id_producto = $1;
       `;
@@ -342,7 +299,10 @@ const validarEstadoLote = async (req, res, next) => {
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0);
 
-      const fechaVenc = new Date(fecha_vencimiento);
+      const partes = String(fecha_vencimiento).substring(0, 10).split('-').map(Number);
+      const fechaVenc = partes.length === 3 && !partes.some(isNaN)
+        ? new Date(partes[0], partes[1] - 1, partes[2])
+        : new Date(fecha_vencimiento);
       fechaVenc.setHours(0, 0, 0, 0);
 
       if (fechaVenc < hoy) {

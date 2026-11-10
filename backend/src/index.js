@@ -11,6 +11,7 @@ const productosRoutes = require('./routes/productos');
 const inventarioRoutes = require('./routes/inventario');
 const movimientosRoutes = require('./routes/movimientos');
 const reportesRoutes = require('./routes/reportes');
+const auditoriaRoutes = require('./routes/auditoria');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,10 +46,13 @@ app.use('/api/lotes', inventarioRoutes);
 app.use('/api/wms', inventarioRoutes);
 
 // Movimientos y Kardex
-app.use('/api/movimientos', require('./routes/movimientos'));
+app.use('/api/movimientos', movimientosRoutes);
 
 // Reportes
 app.use('/api/reportes', reportesRoutes);
+
+// Auditoría de Actividad (Exclusivo ADMIN)
+app.use('/api/auditoria', auditoriaRoutes);
 
 // Endpoint informativo y de salud de la API
 app.get('/api', (req, res) => {

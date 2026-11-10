@@ -20,6 +20,7 @@ const estadoApp = {
   productos: [],
   inventario: [],
   movimientos: [],
+  logsAuditoria: [],
   idAlmacenActivo: null,
 };
 
@@ -157,6 +158,7 @@ function renderizarSegunRol() {
     elementosAdmin.forEach(el => el.classList.remove('d-none'));
     elementosOperario.forEach(el => el.classList.add('d-none'));
     cargarUsuarios();
+    cargarLogsAuditoria();
   }
 }
 
@@ -255,7 +257,7 @@ function renderizarTablaAlmacenActivo() {
     const elCodigo = document.getElementById('almacen-activo-codigo');
     const elDir = document.getElementById('almacen-activo-direccion');
     if (elNombre) elNombre.textContent = almacenActivo.nombre;
-    if (elCodigo) elCodigo.textContent = `ALM-${almacenActivo.id_almacen}`;
+    if (elCodigo) elCodigo.textContent = almacenActivo.codigo || `ALM-${almacenActivo.id_almacen}`;
     if (elDir) elDir.textContent = almacenActivo.direccion || almacenActivo.ubicacion || 'Sede Principal';
   }
 
@@ -271,7 +273,7 @@ function renderizarTablaAlmacenActivo() {
       if (!matchNom && !matchCod && !matchLot) return false;
     }
     if (filtroFefo) {
-      const dias = calcularDiasParaVencer(item.fecha_vencimiento);
+      const dias = calcularDiasParaVencer(item.fecha_vencimiento, item.dias_para_vencer);
       if (filtroFefo === 'vencido' && dias >= 0) return false;
       if (filtroFefo === 'critico' && (dias < 0 || dias > 30)) return false;
       if (filtroFefo === 'proximo' && (dias <= 30 || dias > 90)) return false;
@@ -293,10 +295,24 @@ function renderizarTablaAlmacenActivo() {
   }
 
   tbody.innerHTML = filtrados.map(item => {
-    const badgeFefo = obtenerBadgeFefo(item.fecha_vencimiento);
+    const badgeFefo = obtenerBadgeFefo(item.fecha_vencimiento, item.dias_para_vencer);
     const fechaVenc = item.fecha_vencimiento ? item.fecha_vencimiento.substring(0, 10) : 'N/A';
     const nombreProd = item.nombre_producto || item.producto || item.producto_nombre || 'N/A';
     const loteStr = item.numero_lote || 'N/A';
+    const stockActual = Number(item.cantidad) || 0;
+    const stockMinimo = Number(item.stock_minimo ?? 10);
+    const enAlertaStock = Boolean(item.alerta_stock) || stockActual <= stockMinimo;
+    const badgeStockMinimo = enAlertaStock
+      ? `<div class="mt-1">
+           <span class="badge badge-stock-minimo py-1 px-2.5 rounded-pill d-inline-flex align-items-center gap-1"
+                 title="Punto de reorden alcanzado (Stock mínimo: ${stockMinimo} uds)"
+                 data-tooltip="Crítico por Stock (Mín: ${stockMinimo} uds) - Reabastecer">
+             <i class="fa-solid fa-triangle-exclamation"></i>
+             <span>Stock Mínimo / Reabastecer</span>
+           </span>
+         </div>`
+      : '';
+
     return `
       <tr>
         <td class="ps-3 ps-md-4">
@@ -319,12 +335,16 @@ function renderizarTablaAlmacenActivo() {
                 data-lote="${escaparHtml(loteStr)}"
                 data-vencimiento="${escaparHtml(fechaVenc)}"
                 data-cantidad="${item.cantidad}"
+                data-stock-minimo="${stockMinimo}"
                 data-almacen="${escaparHtml(almacenActivo?.nombre || 'Almacén')}">
             <i class="fa-solid fa-tag me-1 text-primary" style="font-size: 0.68rem;"></i>${escaparHtml(loteStr)}
           </span>
         </td>
         <td class="small font-monospace">${escaparHtml(fechaVenc)}</td>
-        <td class="text-end fw-bold fs-6 text-primary">${item.cantidad} uds</td>
+        <td class="text-end">
+          <div class="fw-bold fs-6 ${enAlertaStock ? 'text-danger' : 'text-primary'}">${item.cantidad} uds</div>
+          ${badgeStockMinimo}
+        </td>
         <td class="text-center">${badgeFefo}</td>
         <td class="text-center pe-3 pe-md-4">
           <button class="btn btn-sm btn-outline-primary py-1 px-2.5 rounded-3 btn-operar-item"
@@ -366,13 +386,14 @@ function renderizarTablaAlmacenActivo() {
 
 function verDetallesLote({ producto, codigo, lote, vencimiento, cantidad, almacen }) {
   const dias = calcularDiasParaVencer(vencimiento);
+  const badgeHtml = obtenerBadgeFefo(vencimiento, dias);
   const estadoTexto = dias < 0
-    ? 'Vencido (Bloqueado para despacho)'
+    ? `Vencido (${dias} días) - Bloqueado para despacho`
     : dias <= 30
-      ? `Crítico (${dias} días restantes - Prioridad máxima FEFO)`
+      ? `Crítico (${dias} días) - Prioridad máxima FEFO`
       : dias <= 90
-        ? `Próximo a vencer (${dias} días restantes)`
-        : `Óptimo (${dias} días de vigencia)`;
+        ? `Próximo (${dias} días) - Vencimiento medio`
+        : `Óptimo (${dias} días) - Vigencia óptima`;
 
   if (typeof Swal !== 'undefined') {
     Swal.fire({
@@ -384,7 +405,7 @@ function verDetallesLote({ producto, codigo, lote, vencimiento, cantidad, almace
           <div class="mb-2"><strong>Sede / Almacén:</strong> ${escaparHtml(almacen)}</div>
           <div class="mb-2"><strong>Fecha de Vencimiento:</strong> <span class="font-monospace">${escaparHtml(vencimiento)}</span></div>
           <div class="mb-2"><strong>Stock Disponible:</strong> <span class="fw-bold text-primary">${escaparHtml(cantidad)} unidades</span></div>
-          <div><strong>Estado FEFO:</strong> ${escaparHtml(estadoTexto)}</div>
+          <div class="d-flex align-items-center gap-2 flex-wrap"><strong>Estado FEFO:</strong> ${badgeHtml} <span class="text-muted">(${escaparHtml(estadoTexto)})</span></div>
         </div>
       `,
       icon: 'info',
@@ -394,25 +415,41 @@ function verDetallesLote({ producto, codigo, lote, vencimiento, cantidad, almace
   }
 }
 
-function calcularDiasParaVencer(fechaStr) {
+function calcularDiasParaVencer(fechaStr, diasPrecalculados = null) {
+  if (diasPrecalculados !== null && diasPrecalculados !== undefined && diasPrecalculados !== '' && !isNaN(Number(diasPrecalculados))) {
+    return parseInt(diasPrecalculados, 10);
+  }
   if (!fechaStr) return 9999;
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const vence = new Date(fechaStr);
+
+  const partes = String(fechaStr).substring(0, 10).split('-').map(Number);
+  const vence = partes.length === 3 && !partes.some(isNaN)
+    ? new Date(partes[0], partes[1] - 1, partes[2])
+    : new Date(fechaStr);
   vence.setHours(0, 0, 0, 0);
-  return Math.ceil((vence - hoy) / (1000 * 60 * 60 * 24));
+
+  return Math.round((vence - hoy) / (1000 * 60 * 60 * 24));
 }
 
-function obtenerBadgeFefo(fechaStr) {
-  const dias = calcularDiasParaVencer(fechaStr);
+function obtenerTextoEstadoFefo(fechaStr, diasPrecalculados = null) {
+  const dias = calcularDiasParaVencer(fechaStr, diasPrecalculados);
+  if (dias < 0) return `Vencido (${dias} días)`;
+  if (dias <= 30) return `Crítico (${dias} días)`;
+  if (dias <= 90) return `Próximo (${dias} días)`;
+  return `Óptimo (${dias} días)`;
+}
+
+function obtenerBadgeFefo(fechaStr, diasPrecalculados = null) {
+  const dias = calcularDiasParaVencer(fechaStr, diasPrecalculados);
   if (dias < 0) {
-    return `<span class="badge badge-fefo-vencido py-1 px-2.5 rounded-pill" title="Lote vencido - No despachar" data-tooltip="Lote vencido - No despachar"><i class="fa-solid fa-ban me-1"></i>Vencido</span>`;
+    return `<span class="badge badge-fefo-vencido py-1 px-2.5 rounded-pill" title="Lote vencido (${dias} días) - No despachar" data-tooltip="Lote vencido (${dias} días) - No despachar"><i class="fa-solid fa-ban me-1"></i>Vencido (${dias} días)</span>`;
   } else if (dias <= 30) {
-    return `<span class="badge badge-fefo-critico py-1 px-2.5 rounded-pill" title="Prioridad crítica FEFO (${dias} días)" data-tooltip="Despacho prioritario FEFO (${dias} días)"><i class="fa-solid fa-triangle-exclamation me-1"></i>Crítico (${dias}d)</span>`;
+    return `<span class="badge badge-fefo-critico py-1 px-2.5 rounded-pill" title="Prioridad crítica FEFO (${dias} días)" data-tooltip="Despacho prioritario FEFO (${dias} días)"><i class="fa-solid fa-triangle-exclamation me-1"></i>Crítico (${dias} días)</span>`;
   } else if (dias <= 90) {
-    return `<span class="badge badge-fefo-proximo py-1 px-2.5 rounded-pill" title="Vencimiento próximo (${dias} días)" data-tooltip="Vencimiento medio (${dias} días)"><i class="fa-solid fa-clock me-1"></i>Próximo (${dias}d)</span>`;
+    return `<span class="badge badge-fefo-proximo py-1 px-2.5 rounded-pill" title="Vencimiento próximo (${dias} días)" data-tooltip="Vencimiento medio (${dias} días)"><i class="fa-solid fa-clock me-1"></i>Próximo (${dias} días)</span>`;
   } else {
-    return `<span class="badge badge-fefo-optimo py-1 px-2.5 rounded-pill" title="Vigencia óptima (${dias} días)" data-tooltip="Vigencia óptima (${dias} días)"><i class="fa-solid fa-circle-check me-1"></i>Óptimo</span>`;
+    return `<span class="badge badge-fefo-optimo py-1 px-2.5 rounded-pill" title="Vigencia óptima (${dias} días)" data-tooltip="Vigencia óptima (${dias} días)"><i class="fa-solid fa-circle-check me-1"></i>Óptimo (${dias} días)</span>`;
   }
 }
 
@@ -430,16 +467,7 @@ async function cargarHistorialMovimientos() {
   try {
     tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Cargando historial auditado de movimientos...</td></tr>';
 
-    const token = localStorage.getItem('token');
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
-    const response = await fetch('/api/movimientos', { headers });
-
-    if (!response.ok) {
-      throw new Error(`Error en el servidor (${response.status}) al obtener el historial`);
-    }
-
-    const data = await response.json();
+    const data = await fetchAutenticado('/api/movimientos');
     const movimientos = Array.isArray(data) ? data : (data.data || []);
     estadoApp.movimientos = movimientos;
 
@@ -617,6 +645,7 @@ async function eliminarUsuario(idUsuario) {
       }
       // 3. Actualizar dinámicamente la tabla sin recargar la página
       await cargarUsuarios();
+      await cargarLogsAuditoria();
     } else {
       throw new Error(res.mensaje || 'No se pudo eliminar el usuario.');
     }
@@ -636,6 +665,124 @@ async function eliminarUsuario(idUsuario) {
 
 // Exponer la función al ámbito global para los botones con onclick
 window.eliminarUsuario = eliminarUsuario;
+
+// ============================================================================
+// 5.1 MÓDULO DE REGISTRO DE AUDITORÍA DE ACTIVIDAD (ACTIVITY LOGS - ADMIN)
+// ============================================================================
+function obtenerBadgeAccionAuditoria(accion) {
+  const act = String(accion || '').toUpperCase();
+  if (act === 'CREAR_PRODUCTO') {
+    return '<span class="badge bg-primary-subtle text-primary border border-primary-subtle py-1 px-2.5 rounded-pill font-monospace"><i class="fa-solid fa-box-open me-1"></i>CREAR_PRODUCTO</span>';
+  }
+  if (act === 'MODIFICAR_PRECIO' || act === 'MODIFICAR_PRODUCTO') {
+    return `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle py-1 px-2.5 rounded-pill font-monospace"><i class="fa-solid fa-tags me-1"></i>${escaparHtml(act)}</span>`;
+  }
+  if (act === 'CREAR_USUARIO') {
+    return '<span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2.5 rounded-pill font-monospace"><i class="fa-solid fa-user-plus me-1"></i>CREAR_USUARIO</span>';
+  }
+  if (act === 'ELIMINAR_USUARIO') {
+    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle py-1 px-2.5 rounded-pill font-monospace"><i class="fa-solid fa-user-xmark me-1"></i>ELIMINAR_USUARIO</span>';
+  }
+  return `<span class="badge bg-secondary-subtle text-secondary border py-1 px-2.5 rounded-pill font-monospace"><i class="fa-solid fa-shield-halved me-1"></i>${escaparHtml(act || 'ACCION_SISTEMA')}</span>`;
+}
+
+async function cargarLogsAuditoria() {
+  const tbody = document.getElementById('tbody-logs-auditoria');
+  if (!tbody) return;
+
+  const rol = (estadoApp.usuario?.rol || localStorage.getItem('rol') || '').toUpperCase();
+  if (rol !== 'ADMIN') return;
+
+  try {
+    const params = new URLSearchParams();
+    const filtroFecha = document.getElementById('filtro-auditoria-fecha')?.value;
+    const filtroAccion = document.getElementById('filtro-auditoria-accion')?.value;
+    const filtroUsuario = document.getElementById('filtro-auditoria-usuario')?.value?.trim();
+
+    if (filtroFecha) params.set('fecha', filtroFecha);
+    if (filtroAccion && filtroAccion !== 'TODOS') params.set('accion', filtroAccion);
+    if (filtroUsuario) params.set('usuario', filtroUsuario);
+
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    const res = await fetchAutenticado(`/api/auditoria${queryString}`);
+    estadoApp.logsAuditoria = res.logs || res.data || [];
+    renderizarTablaLogsAuditoria();
+  } catch (error) {
+    console.error('Error al cargar logs de auditoría:', error);
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-danger">Error al cargar auditoría: ${escaparHtml(error.message)}</td></tr>`;
+  }
+}
+
+function renderizarTablaLogsAuditoria() {
+  const tbody = document.getElementById('tbody-logs-auditoria');
+  if (!tbody) return;
+
+  const textoFiltro = (document.getElementById('filtro-auditoria-usuario')?.value || '').toLowerCase().trim();
+  const accionFiltro = document.getElementById('filtro-auditoria-accion')?.value || 'TODOS';
+  const fechaFiltro = document.getElementById('filtro-auditoria-fecha')?.value || '';
+
+  const filtrados = (estadoApp.logsAuditoria || []).filter(log => {
+    const coincideAccion = accionFiltro === 'TODOS' || String(log.accion).toUpperCase() === accionFiltro;
+    const coincideTexto = !textoFiltro ||
+      (log.usuario_nombre || log.usuario || '').toLowerCase().includes(textoFiltro) ||
+      (log.usuario_email || log.email_usuario || '').toLowerCase().includes(textoFiltro) ||
+      (log.detalles || '').toLowerCase().includes(textoFiltro) ||
+      (log.ip_origen || '').toLowerCase().includes(textoFiltro);
+
+    let coincideFecha = true;
+    if (fechaFiltro && log.fecha_hora) {
+      const d = new Date(log.fecha_hora);
+      if (!isNaN(d.getTime())) {
+        const pad = (n) => String(n).padStart(2, '0');
+        const fechaLocal = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+        coincideFecha = fechaLocal === fechaFiltro;
+      }
+    }
+
+    return coincideAccion && coincideTexto && coincideFecha;
+  });
+
+  if (filtrados.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center py-5 text-muted">
+          <i class="fa-solid fa-clipboard-check fs-3 d-block mb-2 opacity-50"></i>
+          No se encontraron registros de auditoría para los filtros seleccionados.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbody.innerHTML = filtrados.map(log => {
+    const fechaFormateada = formatearFechaHoraAuditoria(log.fecha_hora);
+    const badgeAccion = obtenerBadgeAccionAuditoria(log.accion);
+    const nombreUsuario = log.usuario_nombre || log.usuario || 'Administrador del Sistema';
+    const emailUsuario = log.usuario_email || log.email_usuario || (log.id_usuario ? `ID #${log.id_usuario}` : 'Sistema');
+
+    return `
+      <tr>
+        <td class="ps-3 ps-md-4 font-monospace fw-bold text-secondary">#${log.id_log}</td>
+        <td><small class="text-dark fw-semibold font-monospace">${escaparHtml(fechaFormateada)}</small></td>
+        <td>
+          <div class="d-flex flex-column">
+            <span class="fw-bold text-dark small"><i class="fa-solid fa-user-shield text-danger me-1"></i>${escaparHtml(nombreUsuario)}</span>
+            <small class="text-muted font-monospace" style="font-size: 0.72rem;">${escaparHtml(emailUsuario)}</small>
+          </div>
+        </td>
+        <td class="text-center">${badgeAccion}</td>
+        <td>
+          <span class="small text-dark">${escaparHtml(log.detalles || 'Sin detalles adicionales')}</span>
+        </td>
+        <td class="text-center pe-3 pe-md-4">
+          <span class="badge bg-light text-dark border font-monospace">${escaparHtml(log.ip_origen || '127.0.0.1')}</span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.cargarLogsAuditoria = cargarLogsAuditoria;
 
 // ============================================================================
 // 6. INDICADOR VISUAL DE CARGA EN EXPORTACIONES (EXCEL / PDF)
@@ -688,6 +835,11 @@ async function exportarReporteWMS(tipoReporte = 'inventario', formato = 'excel',
       const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
       const response = await fetch(`${API_BASE_URL}${endpoint}`, { headers });
+      if (response.status === 401) {
+        localStorage.clear();
+        window.location.href = 'login.html';
+        throw new Error('Sesión expirada');
+      }
       if (!response.ok) {
         throw new Error(`No se pudo generar el archivo Excel (${response.status})`);
       }
@@ -780,16 +932,20 @@ function generarReportePDFImprimible(tipoReporte) {
     `;
   } else {
     const items = estadoApp.inventario || [];
-    const filas = items.map(i => `
+    const filas = items.map(i => {
+      const estadoFefoStr = obtenerTextoEstadoFefo(i.fecha_vencimiento, i.dias_para_vencer);
+      return `
       <tr>
         <td>${escaparHtml(i.almacen || i.nombre_almacen || 'N/A')}</td>
         <td>${escaparHtml(i.codigo_barras || 'N/A')}</td>
         <td><strong>${escaparHtml(i.nombre_producto || i.producto || 'N/A')}</strong></td>
         <td>${escaparHtml(i.numero_lote || 'N/A')}</td>
         <td>${escaparHtml((i.fecha_vencimiento || '').substring(0, 10))}</td>
+        <td><strong>${escaparHtml(estadoFefoStr)}</strong></td>
         <td style="text-align:right;font-weight:bold;">${i.cantidad} uds</td>
       </tr>
-    `).join('');
+    `;
+    }).join('');
 
     tablaHtml = `
       <table>
@@ -800,10 +956,11 @@ function generarReportePDFImprimible(tipoReporte) {
             <th>Producto</th>
             <th>Lote</th>
             <th>Vencimiento</th>
+            <th>Estado FEFO</th>
             <th>Stock Disponible</th>
           </tr>
         </thead>
-        <tbody>${filas || '<tr><td colspan="6">Sin registros</td></tr>'}</tbody>
+        <tbody>${filas || '<tr><td colspan="7">Sin registros</td></tr>'}</tbody>
       </table>
     `;
   }
@@ -833,7 +990,7 @@ function generarReportePDFImprimible(tipoReporte) {
     <body>
       <div class="header">
         <div>
-          <h2>SISTEMA WMS PRO - ${titulo}</h2>
+          <h2>SISTEMA DE ALMACEN - ${titulo}</h2>
           <div class="meta">Generado por: ${escaparHtml(usuarioActual)}</div>
         </div>
         <div class="meta">Fecha y Hora: ${escaparHtml(fechaActual)}</div>
@@ -969,18 +1126,20 @@ function configurarFormularios() {
       const descripcion = document.getElementById('prod-descripcion')?.value?.trim();
       const precio_costo = parseFloat(document.getElementById('prod-precio-costo')?.value);
       const precio_venta = parseFloat(document.getElementById('prod-precio-venta')?.value);
+      const stock_minimo = parseInt(document.getElementById('prod-stock-minimo')?.value ?? '10', 10);
 
       try {
         const res = await fetchAutenticado('/api/productos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ codigo_barras, nombre, descripcion, precio_costo, precio_venta }),
+          body: JSON.stringify({ codigo_barras, nombre, descripcion, precio_costo, precio_venta, stock_minimo }),
         });
 
         Swal.fire({ icon: 'success', title: 'Producto Creado', text: res.mensaje || 'Producto registrado.', timer: 2000, showConfirmButton: false });
         formProd.reset();
         bootstrap.Modal.getInstance(document.getElementById('modal-nuevo-producto'))?.hide();
         await cargarDatosIniciales();
+        await cargarLogsAuditoria();
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error al Registrar', text: err.message });
       }
@@ -1009,6 +1168,7 @@ function configurarFormularios() {
         formUsr.reset();
         bootstrap.Modal.getInstance(document.getElementById('modal-nuevo-usuario'))?.hide();
         cargarUsuarios();
+        cargarLogsAuditoria();
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error al Registrar Usuario', text: err.message });
       }
@@ -1047,9 +1207,22 @@ function configurarEventosYProteccion() {
       const target = e.target.getAttribute('data-bs-target');
       if (target === '#tab-historial') {
         cargarHistorialMovimientos();
+      } else if (target === '#tab-gestion') {
+        cargarUsuarios();
+        cargarLogsAuditoria();
       }
     });
   });
+
+  // Filtros de auditoría de actividad (Admin)
+  const fAudUsuario = document.getElementById('filtro-auditoria-usuario');
+  if (fAudUsuario) fAudUsuario.addEventListener('input', renderizarTablaLogsAuditoria);
+
+  const fAudAccion = document.getElementById('filtro-auditoria-accion');
+  if (fAudAccion) fAudAccion.addEventListener('change', () => cargarLogsAuditoria());
+
+  const fAudFecha = document.getElementById('filtro-auditoria-fecha');
+  if (fAudFecha) fAudFecha.addEventListener('change', () => cargarLogsAuditoria());
 
   // Filtros de historial
   const fTexto = document.getElementById('filtro-historial-texto');

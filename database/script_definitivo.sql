@@ -6,6 +6,7 @@
 -- ==========================================================
 
 -- 1. ELIMINAR TABLAS EXISTENTES (Orden inverso por dependencias)
+DROP TABLE IF EXISTS logs_auditoria CASCADE;
 DROP TABLE IF EXISTS detalle_transferencias CASCADE;
 DROP TABLE IF EXISTS transferencias CASCADE;
 DROP TABLE IF EXISTS movimientos CASCADE;
@@ -38,7 +39,8 @@ CREATE TABLE almacenes (
     id_almacen SERIAL PRIMARY KEY,
     codigo VARCHAR(20) UNIQUE NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    ubicacion TEXT
+    ubicacion TEXT,
+    direccion TEXT
 );
 
 CREATE TABLE productos (
@@ -47,7 +49,10 @@ CREATE TABLE productos (
     nombre VARCHAR(150) NOT NULL,
     categoria VARCHAR(100),
     descripcion TEXT,
-    precio NUMERIC(10,2) DEFAULT 0.00
+    precio NUMERIC(10,2) DEFAULT 0.00,
+    precio_costo NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    stock_minimo INT NOT NULL DEFAULT 10 CHECK (stock_minimo >= 0)
 );
 
 CREATE TABLE lotes (
@@ -64,6 +69,7 @@ CREATE TABLE inventario (
     id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
     id_lote INT REFERENCES lotes(id_lote) ON DELETE CASCADE,
     cantidad INT NOT NULL DEFAULT 0 CHECK (cantidad >= 0),
+    stock_minimo INT NOT NULL DEFAULT 10 CHECK (stock_minimo >= 0),
     UNIQUE(id_almacen, id_producto, id_lote)
 );
 
@@ -96,6 +102,15 @@ CREATE TABLE detalle_transferencias (
     cantidad INT NOT NULL CHECK (cantidad > 0)
 );
 
+CREATE TABLE logs_auditoria (
+    id_log SERIAL PRIMARY KEY,
+    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
+    accion VARCHAR(100) NOT NULL,
+    detalles TEXT,
+    ip_origen VARCHAR(60),
+    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 3. DATOS INICIALES (SEEDS) - EXCLUSIVAMENTE ADMINISTRADOR (1) Y OPERARIO (2)
 INSERT INTO roles (id_rol, nombre, descripcion) VALUES 
 (1, 'Administrador', 'Control total del sistema, catálogos y gestión de usuarios'),
@@ -104,9 +119,11 @@ ON CONFLICT (id_rol) DO UPDATE SET
     nombre = EXCLUDED.nombre, 
     descripcion = EXCLUDED.descripcion;
 
-INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion) VALUES 
-(1, 'ALM-1', 'Almacén Central', 'Sede Principal')
-ON CONFLICT (id_almacen) DO NOTHING;
+INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion, direccion) VALUES 
+(1, 'ALM-1', 'Almacén Central', 'Sede Principal', 'Sede Principal')
+ON CONFLICT (id_almacen) DO UPDATE SET
+    ubicacion = EXCLUDED.ubicacion,
+    direccion = EXCLUDED.direccion;
 
 -- Usuario Administrador Oficial
 -- Correo: admin@almacen.com | Contraseña: admin123

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
+const { verificarToken, verificarRol } = require('../middlewares/auth');
 
 /**
  * ============================================================================
@@ -10,12 +11,14 @@ const pool = require('../config/db');
  */
 
 // GET /api/almacenes - Listar todos los almacenes
-router.get('/', async (req, res) => {
+router.get('/', verificarToken, async (req, res) => {
   try {
     const query = `
       SELECT 
         id_almacen, 
+        codigo,
         nombre, 
+        ubicacion,
         direccion 
       FROM almacenes 
       ORDER BY id_almacen ASC;
@@ -26,7 +29,7 @@ router.get('/', async (req, res) => {
     // Mapear filas agregando código amigable como fallback visual para el frontend
     const almacenes = resultado.rows.map(alm => ({
       ...alm,
-      codigo: `ALM-${String(alm.id_almacen).padStart(2, '0')}`,
+      codigo: alm.codigo || `ALM-${String(alm.id_almacen).padStart(2, '0')}`,
     }));
 
     return res.status(200).json({
@@ -48,18 +51,23 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/almacenes/:id - Obtener un almacén por su ID
-router.get('/:id', async (req, res) => {
-  const { id } = req.params;
+router.get('/:id', verificarToken, async (req, res) => {
+  const idAlmacen = parseInt(req.params.id, 10);
+  if (isNaN(idAlmacen) || idAlmacen <= 0) {
+    return res.status(400).json({ exito: false, mensaje: 'ID de almacén inválido.' });
+  }
   try {
     const query = `
       SELECT 
         id_almacen, 
+        codigo,
         nombre, 
+        ubicacion,
         direccion 
       FROM almacenes 
       WHERE id_almacen = $1;
     `;
-    const resultado = await pool.query(query, [id]);
+    const resultado = await pool.query(query, [idAlmacen]);
 
     if (resultado.rows.length === 0) {
       return res.status(404).json({
@@ -69,7 +77,7 @@ router.get('/:id', async (req, res) => {
     }
 
     const alm = resultado.rows[0];
-    alm.codigo = `ALM-${String(alm.id_almacen).padStart(2, '0')}`;
+    alm.codigo = alm.codigo || `ALM-${String(alm.id_almacen).padStart(2, '0')}`;
 
     return res.status(200).json({
       exito: true,
