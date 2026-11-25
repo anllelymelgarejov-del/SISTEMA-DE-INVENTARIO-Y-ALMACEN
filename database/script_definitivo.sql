@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS almacenes (
     id_almacen SERIAL PRIMARY KEY,
     codigo VARCHAR(20) UNIQUE NOT NULL,
     nombre VARCHAR(100) NOT NULL,
-    ubicacion TEXT
+    ubicacion TEXT,
+    direccion TEXT
 );
 
 CREATE TABLE IF NOT EXISTS productos (
@@ -37,7 +38,10 @@ CREATE TABLE IF NOT EXISTS productos (
     nombre VARCHAR(150) NOT NULL,
     categoria VARCHAR(100),
     descripcion TEXT,
-    precio NUMERIC(10,2) DEFAULT 0.00
+    precio NUMERIC(10,2) DEFAULT 0.00,
+    precio_costo NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00,
+    stock_minimo INT NOT NULL DEFAULT 10 CHECK (stock_minimo >= 0)
 );
 
 CREATE TABLE IF NOT EXISTS lotes (
@@ -54,6 +58,7 @@ CREATE TABLE IF NOT EXISTS inventario (
     id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
     id_lote INT REFERENCES lotes(id_lote) ON DELETE CASCADE,
     cantidad INT NOT NULL DEFAULT 0 CHECK (cantidad >= 0),
+    stock_minimo INT NOT NULL DEFAULT 10 CHECK (stock_minimo >= 0),
     UNIQUE(id_almacen, id_producto, id_lote)
 );
 
@@ -86,14 +91,21 @@ CREATE TABLE IF NOT EXISTS detalle_transferencias (
     cantidad INT NOT NULL CHECK (cantidad > 0)
 );
 
+-- Actualización aditiva para bases creadas con versiones previas del esquema.
+ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS direccion TEXT;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_costo NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS stock_minimo INT NOT NULL DEFAULT 10;
+ALTER TABLE inventario ADD COLUMN IF NOT EXISTS stock_minimo INT NOT NULL DEFAULT 10;
+
 -- 3. DATOS INICIALES (SEEDS) - EXCLUSIVAMENTE ADMINISTRADOR (1) Y OPERARIO (2)
 INSERT INTO roles (id_rol, nombre, descripcion) VALUES 
 (1, 'Administrador', 'Control total del sistema, catálogos y gestión de usuarios'),
 (2, 'Operario', 'Gestión de entradas, salidas y consulta de inventario por almacén')
 ON CONFLICT DO NOTHING;
 
-INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion) VALUES 
-(1, 'ALM-1', 'Almacén Central', 'Sede Principal')
+INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion, direccion) VALUES
+(1, 'ALM-1', 'Almacén Central', 'Sede Principal', 'Sede Principal')
 ON CONFLICT (id_almacen) DO NOTHING;
 
 -- Usuario Administrador Oficial

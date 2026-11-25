@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
 const { verificarToken, verificarRol } = require('../middlewares/auth');
+const { registrarAuditoria } = require('./auditoria');
 
 /**
  * ============================================================================
@@ -122,6 +123,13 @@ router.post('/', verificarToken, verificarRol('ADMIN'), async (req, res) => {
     const nombreRol = rolIdNum === 1 ? 'ADMIN' : 'OPERARIO';
     nuevoUsuario.rol = nombreRol;
 
+    await registrarAuditoria(
+      req.user?.id_usuario || req.user?.id,
+      'CREAR_USUARIO',
+      `Usuario creado: "${nuevoUsuario.nombre}" (${nuevoUsuario.email}) con rol ${nombreRol}`,
+      req
+    );
+
     return res.status(201).json({
       exito: true,
       success: true,
@@ -143,26 +151,27 @@ router.post('/', verificarToken, verificarRol('ADMIN'), async (req, res) => {
 
 // 3. DELETE /api/usuarios/:id - Eliminar usuario del sistema (Exclusivo ADMIN)
 router.delete('/:id', verificarToken, verificarRol('ADMIN'), async (req, res) => {
+  const idUsuario = parseInt(req.params.id, 10);
+
+  if (isNaN(idUsuario) || idUsuario <= 0) {
+    return res.status(400).json({
+      exito: false,
+      success: false,
+      mensaje: 'ID de usuario inválido.',
+    });
+  }
+
+  // RESTRICCIÓN DE SEGURIDAD: Prohibido eliminar al administrador principal (ID 1)
+  if (idUsuario === 1) {
+    return res.status(400).json({
+      exito: false,
+      success: false,
+      mensaje: 'Acción no permitida: El usuario Administrador principal (ID 1) no puede ser eliminado del sistema.',
+    });
+  }
+
   const client = await pool.connect();
   try {
-    const idUsuario = parseInt(req.params.id, 10);
-
-    if (isNaN(idUsuario) || idUsuario <= 0) {
-      return res.status(400).json({
-        exito: false,
-        success: false,
-        mensaje: 'ID de usuario inválido.',
-      });
-    }
-
-    // RESTRICCIÓN DE SEGURIDAD: Prohibido eliminar al administrador principal (ID 1)
-    if (idUsuario === 1) {
-      return res.status(400).json({
-        exito: false,
-        success: false,
-        mensaje: 'Acción no permitida: El usuario Administrador principal (ID 1) no puede ser eliminado del sistema.',
-      });
-    }
 
     // Verificar existencia del usuario y validar por correo institucional
     const resBusqueda = await client.query(
@@ -198,6 +207,13 @@ router.delete('/:id', verificarToken, verificarRol('ADMIN'), async (req, res) =>
     await client.query('DELETE FROM usuarios WHERE id_usuario = $1', [idUsuario]);
 
     await client.query('COMMIT');
+
+    await registrarAuditoria(
+      req.user?.id_usuario || req.user?.id,
+      'ELIMINAR_USUARIO',
+      `Usuario eliminado: ID #${idUsuario} "${usuarioAEliminar.nombre}" (${usuarioAEliminar.email})`,
+      req
+    );
 
     return res.status(200).json({
       exito: true,

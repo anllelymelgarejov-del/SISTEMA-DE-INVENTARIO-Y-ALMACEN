@@ -91,7 +91,7 @@ router.get('/excel', async (req, res) => {
       { header: 'Stock Disponible', key: 'cantidad', width: 18 },
     ];
 
-    worksheet.columns = headers;
+    worksheet.columns = headers.map(({ key, width }) => ({ key, width }));
 
     const headerRow = worksheet.getRow(4);
     headerRow.values = headers.map((h) => h.header);
@@ -115,11 +115,12 @@ router.get('/excel', async (req, res) => {
       const dias = parseInt(item.dias_para_vencer, 10);
       totalUnidades += cant;
 
-      let estadoFefo = 'ÓPTIMO';
+      let estadoFefo = 'Óptimo';
       if (!isNaN(dias)) {
-        if (dias < 0) estadoFefo = 'VENCIDO';
-        else if (dias <= 30) estadoFefo = `CRÍTICO (${dias}d)`;
-        else if (dias <= 90) estadoFefo = `PRÓXIMO (${dias}d)`;
+        if (dias < 0) estadoFefo = `Vencido (${dias} días)`;
+        else if (dias <= 30) estadoFefo = `Crítico (${dias} días)`;
+        else if (dias <= 90) estadoFefo = `Próximo (${dias} días)`;
+        else estadoFefo = `Óptimo (${dias} días)`;
       }
 
       const row = worksheet.addRow({
@@ -232,7 +233,7 @@ router.get('/historial/excel', async (req, res) => {
       views: [{ showGridLines: true }],
     });
 
-    worksheet.mergeCells('A1:H1');
+    worksheet.mergeCells('A1:I1');
     const titleCell = worksheet.getCell('A1');
     titleCell.value = 'HISTORIAL AUDITADO DE MOVIMIENTOS Y TRAZABILIDAD (KARDEX WMS)';
     titleCell.font = { name: 'Calibri', size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -256,7 +257,7 @@ router.get('/historial/excel', async (req, res) => {
       { header: 'Proveedor / Observación de Auditoría', key: 'observacion', width: 38 },
     ];
 
-    worksheet.columns = headers;
+    worksheet.columns = headers.map(({ key, width }) => ({ key, width }));
     const headerRow = worksheet.getRow(3);
     headerRow.values = headers.map((h) => h.header);
     headerRow.height = 25;

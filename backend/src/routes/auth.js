@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { verificarToken } = require('../middlewares/auth');
 
 /**
  * ============================================================================
@@ -32,14 +33,15 @@ router.post('/login', async (req, res) => {
         nombre, 
         email, 
         password_hash, 
-        id_rol 
+        id_rol,
+        COALESCE(estado, TRUE) AS estado
       FROM usuarios 
       WHERE LOWER(email) = LOWER($1);
     `;
 
-    const resultado = await pool.query(query, [email.trim()]);
+    const resultado = await pool.query(query, [String(email).trim()]);
 
-    // 3. Validar existencia del usuario
+    // 3. Validar existencia y estado activo del usuario
     if (resultado.rows.length === 0) {
       return res.status(401).json({
         exito: false,
@@ -49,6 +51,14 @@ router.post('/login', async (req, res) => {
     }
 
     const usuario = resultado.rows[0];
+
+    if (usuario.estado === false) {
+      return res.status(403).json({
+        exito: false,
+        success: false,
+        mensaje: 'Acceso denegado: La cuenta de usuario se encuentra inactiva.',
+      });
+    }
 
     // 4. Validación de contraseña (soporta tanto bcrypt hash como texto plano)
     const passAlmacenada = String(usuario.password_hash || '');
@@ -94,7 +104,8 @@ router.post('/login', async (req, res) => {
       rol_id: usuario.id_rol,
     };
 
-    const token = jwt.sign(payload, secret, { expiresIn: '24h' });
+    const expiresIn = process.env.JWT_EXPIRES_IN || '24h';
+    const token = jwt.sign(payload, secret, { expiresIn });
 
     // Objeto estandarizado de usuario
     const usuarioRespuesta = {
@@ -159,19 +170,8 @@ router.post('/recuperar-password', async (req, res) => {
  * @route   GET /api/auth/perfil
  * @desc    Obtiene información del usuario autenticado
  */
-router.get('/perfil', async (req, res) => {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) {
-    return res.status(401).json({ exito: false, mensaje: 'Token no proporcionado' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  const secret = process.env.JWT_SECRET || 'wms_secret_fallback_key';
-
-  jwt.verify(token, secret, (err, decoded) => {
-    if (err) return res.status(403).json({ exito: false, mensaje: 'Token inválido' });
-    return res.json({ exito: true, usuario: decoded });
-  });
+router.get('/perfil', verificarToken, (req, res) => {
+  return res.json({ exito: true, usuario: req.user });
 });
 
 module.exports = router;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const { verificarToken, verificarRol } = require('../middlewares/auth');
 
 /**
  * ============================================================================
@@ -10,47 +10,13 @@ const pool = require('../config/db');
  * Tabla: movimientos (id_movimiento, id_almacen, id_producto, id_lote, id_usuario, tipo, cantidad, fecha, observacion)
  */
 
-// Helper para extraer el usuario autenticado desde el header Authorization (si está presente)
+// Extraer exclusivamente el usuario autenticado inyectado por el middleware verificarToken en req.user
 function obtenerUsuarioDesdeRequest(req) {
-  if (req.user && (req.user.id || req.user.id_usuario)) {
-    return {
-      id_usuario: parseInt(req.user.id || req.user.id_usuario, 10),
-      nombre: req.user.nombre || null,
-      rol: req.user.rol || null,
-    };
-  }
-
-  const authHeader = req.headers['authorization'] || req.headers['Authorization'];
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'wms_secret_fallback_key';
-    try {
-      const decoded = jwt.verify(token, secret);
-      return {
-        id_usuario: parseInt(decoded.id || decoded.id_usuario || 1, 10),
-        nombre: decoded.nombre || null,
-        rol: decoded.rol || null,
-      };
-    } catch (err) {
-      // Si el token no pudo verificarse con la clave primaria, intentar decodificar payload
-      try {
-        const decodedFallback = jwt.decode(token);
-        if (decodedFallback && (decodedFallback.id || decodedFallback.id_usuario)) {
-          return {
-            id_usuario: parseInt(decodedFallback.id || decodedFallback.id_usuario, 10),
-            nombre: decodedFallback.nombre || null,
-            rol: decodedFallback.rol || null,
-          };
-        }
-      } catch (_) {}
-    }
-  }
-
-  const idBody = parseInt(req.body?.id_usuario, 10);
+  const idUsuario = parseInt(req.user?.id_usuario || req.user?.id, 10);
   return {
-    id_usuario: !isNaN(idBody) && idBody > 0 ? idBody : 1,
-    nombre: null,
-    rol: null,
+    id_usuario: !isNaN(idUsuario) && idUsuario > 0 ? idUsuario : null,
+    nombre: req.user?.nombre || null,
+    rol: req.user?.rol || null,
   };
 }
 
@@ -74,6 +40,9 @@ const consultarHistorialMovimientos = async (req, res) => {
     const query = `
       SELECT 
         m.id_movimiento, 
+        m.id_almacen,
+        m.id_producto,
+        m.id_lote,
         m.id_usuario,
         m.tipo, 
         m.cantidad, 
@@ -111,8 +80,8 @@ const consultarHistorialMovimientos = async (req, res) => {
 };
 
 // GET /api/movimientos y GET /api/movimientos/historial
-router.get('/', consultarHistorialMovimientos);
-router.get('/historial', consultarHistorialMovimientos);
+router.get('/', verificarToken, consultarHistorialMovimientos);
+router.get('/historial', verificarToken, consultarHistorialMovimientos);
 
 // POST /api/movimientos y /api/movimientos/registrar - Registro de Entradas y Salidas con Auditoría y Proveedor
 const registrarMovimiento = async (req, res) => {
@@ -137,9 +106,16 @@ const registrarMovimiento = async (req, res) => {
   const cantNum = parseInt(cantidad, 10);
   const loteLimpio = String(numero_lote || '').trim().toUpperCase();
 
-  // Extraer usuario autenticado para el log de auditoría
+  // Extraer usuario autenticado verificado desde req.user para el log de auditoría
   const infoUsuario = obtenerUsuarioDesdeRequest(req);
-  const idUsuarioAuditoria = infoUsuario.id_usuario || 1;
+  const idUsuarioAuditoria = infoUsuario.id_usuario;
+
+  if (!idUsuarioAuditoria) {
+    return res.status(401).json({
+      exito: false,
+      mensaje: 'No se pudo identificar al usuario autenticado en el token de sesión.',
+    });
+  }
 
   // Construir observación de trazabilidad (Proveedor / Origen + Nota de auditoría)
   const proveedorLimpio = String(proveedor || origen || '').trim();
@@ -269,7 +245,11 @@ const registrarMovimiento = async (req, res) => {
 
       if (loteExistente.rows[0].vencido) {
         await client.query('ROLLBACK');
-        return res.status(400).json({ exito: false, mensaje: `No se puede despachar el lote ${loteLimpio}: está vencido.` });
+        return res.status(400).json({
+          exito: false,
+          success: false,
+          mensaje: `No se puede despachar el lote ${loteLimpio}: está vencido.`,
+        });
       }
 
       // Validar stock disponible
@@ -326,7 +306,7 @@ const registrarMovimiento = async (req, res) => {
   }
 };
 
-router.post('/', registrarMovimiento);
-router.post('/registrar', registrarMovimiento);
+router.post('/', verificarToken, registrarMovimiento);
+router.post('/registrar', verificarToken, registrarMovimiento);
 
 module.exports = router;
