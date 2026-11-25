@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ExcelJS = require('exceljs');
 const pool = require('../config/db');
+const { verificarToken } = require('../middlewares/auth');
+
+// Los reportes contienen datos operativos y requieren sesión JWT.
+router.use(verificarToken);
 
 /**
  * Formatea una fecha a DD/MM/AAAA HH:mm:ss

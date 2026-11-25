@@ -207,7 +207,7 @@ const registrarMovimiento = async (req, res) => {
     // 3. Buscar o registrar lote
     let loteId;
     const loteExistente = await client.query(
-      'SELECT id_lote, fecha_vencimiento FROM lotes WHERE id_producto = $1 AND numero_lote = $2',
+      'SELECT id_lote, fecha_vencimiento, (fecha_vencimiento < CURRENT_DATE) AS vencido FROM lotes WHERE id_producto = $1 AND numero_lote = $2',
       [prodId, loteLimpio]
     );
 
@@ -266,6 +266,11 @@ const registrarMovimiento = async (req, res) => {
         });
       }
       loteId = loteExistente.rows[0].id_lote;
+
+      if (loteExistente.rows[0].vencido) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ exito: false, mensaje: `No se puede despachar el lote ${loteLimpio}: está vencido.` });
+      }
 
       // Validar stock disponible
       const invRes = await client.query(

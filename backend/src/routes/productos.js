@@ -18,8 +18,8 @@ router.get('/', async (req, res) => {
         codigo_barras, 
         nombre, 
         descripcion, 
-        precio_costo, 
-        precio_venta 
+        precio AS precio_costo,
+        precio AS precio_venta
       FROM productos 
       ORDER BY id_producto DESC;
     `;
@@ -54,8 +54,8 @@ router.get('/:id', async (req, res) => {
         codigo_barras, 
         nombre, 
         descripcion, 
-        precio_costo, 
-        precio_venta 
+        precio AS precio_costo,
+        precio AS precio_venta
       FROM productos 
       WHERE id_producto = $1;
     `;

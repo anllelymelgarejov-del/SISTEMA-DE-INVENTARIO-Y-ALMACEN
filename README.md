@@ -39,15 +39,27 @@ El proyecto está construido bajo una arquitectura cliente-servidor desacoplada,
 
 ---
 
-## 👥 Roles de Usuario y Permisos
+## Módulos de la API
 
-El sistema implementa dos perfiles con interfaces dinámicas adaptadas a sus funciones operativas:
+| Módulo | Ruta base | Operaciones principales |
+| :--- | :--- | :--- |
+| Autenticación | `/api/auth` | Inicio de sesión y perfil JWT |
+| Usuarios | `/api/usuarios` | Consulta, alta y baja administrativa |
+| Almacenes | `/api/almacenes` | Consulta de almacenes |
+| Productos | `/api/productos` | Consulta y alta de productos |
+| Inventario y lotes | `/api/inventario` | Existencias por almacén, producto y lote |
+| Movimientos (Kardex) | `/api/movimientos` | Registro de entradas/salidas e historial |
+| Transferencias | `/api/transferencias` | Historial, detalle y transferencia atómica de stock entre almacenes |
+| Reportes | `/api/reportes` | Exportación de inventario e historial a Excel |
+
+Las rutas de transferencias requieren `Authorization: Bearer <token>` y están disponibles para Administrador y Operario.
+
+## 👥 Roles de Usuario y Permisos
 
 | Rol | Icono | Responsabilidades y Permisos |
 | :--- | :---: | :--- |
-| **Administrador** | 👨‍💼 | **Control Total del Sistema:** Gestión y creación de usuarios, configuración del catálogo maestro de productos (códigos de barras, precios y descripción), administración de almacenes, operaciones generales por lote y auditoría completa del Kardex. |
-| **Operario** | 👷‍♂️ | **Operativa de Almacén:** Acceso directo a las tarjetas de almacén para consulta de stock disponible en tiempo real, registro rápido de entradas (+), registro de despachos/salidas (-) por lote y visualización del historial de movimientos. |
-
+| **Administrador** | 👨‍💼 | Gestión de usuarios, catálogo de productos, almacenes, transferencias y auditoría completa del Kardex. |
+| **Operario** | 👷‍♂️ | Consulta de stock, entradas y salidas por lote, transferencias entre almacenes e historial de movimientos. |
 ---
 
 ## 📋 Requisitos Previos
@@ -110,19 +122,19 @@ JWT_EXPIRES_IN=24h
 > **Nota (local):** Para usar PostgreSQL local (pgAdmin), deja `DATABASE_URL` **comentada o sin definir** y llena `DB_USER`, `DB_HOST`, `DB_NAME`, `DB_PASSWORD` y `DB_PORT`. Si defines `DATABASE_URL`, el backend la usará a ella (con SSL) en lugar de la conexión local.
 
 ### 4. Configurar la Base de Datos PostgreSQL
-Primero crea la base de datos y luego ejecuta el esquema oficial `db/schema.sql`, que crea **todas las tablas y los datos semilla** (incluidos los usuarios de acceso):
+Primero crea la base de datos y luego ejecuta el esquema oficial `database/script_definitivo.sql`, que crea las tablas que falten y agrega los datos semilla sin borrar ni sobrescribir información existente:
 
 ```bash
 # 1) Crear la base de datos (si aún no existe)
 psql -U postgres -c "CREATE DATABASE sis_inv_almacen;"
 
 # 2) Ejecutar el esquema oficial (tablas + datos de prueba)
-psql -U postgres -d sis_inv_almacen -f db/schema.sql
+psql -U postgres -d sis_inv_almacen -f database/script_definitivo.sql
 ```
 
-El script es **idempotente**: puedes ejecutarlo las veces que quieras sin obtener errores.
+El script es **idempotente**: puedes ejecutarlo varias veces. Para reiniciar una base de desarrollo desde cero, ejecuta primero `database/reset_dev.sql`; este archivo elimina las tablas y sus datos.
 
-> **Nota:** `database.sql` quedó **obsoleto** (pertenecía al esquema antiguo). No lo uses: el esquema vigente es `db/schema.sql`.
+> **Nota:** `database.sql` fue retirado por obsoleto. El esquema vigente es `database/script_definitivo.sql`.
 
 ### 🗄️ Alternativa desde pgAdmin
 
@@ -132,7 +144,7 @@ El script es **idempotente**: puedes ejecutarlo las veces que quieras sin obtene
    CREATE DATABASE sis_inv_almacen;
    ```
 3. Clic derecho sobre la base `sis_inv_almacen` > **Query Tool**.
-4. Abre el archivo `db/schema.sql` y presiona **F5** (Run) para crear todas las tablas y datos iniciales.
+4. Abre el archivo `database/script_definitivo.sql` y presiona **F5** (Run) para crear las tablas faltantes y agregar los datos iniciales.
 5. Configura tus credenciales de conexión en tu archivo `.env` local.
 
 
@@ -159,23 +171,37 @@ http://localhost:3000
 
 | Rol | Correo Electrónico | Contraseña |
 | :--- | :--- | :--- |
-| **Administrador** | `admin@almacen.com` | `
-` |
-| **Operario** | `operario@almacen.com` | `Operario1234!` |
+| **Administrador** | `admin@almacen.com` | `admin123` |
+| **Operario** | `operario@almacen.com` | `admin123` |
 
 ---
+
+## Datos de Prueba y Verificación
+
+Con la base `sis_inv_almacen` creada y el esquema aplicado, carga los datos de demostración:
+
+```bash
+psql -U postgres -d sis_inv_almacen -f database/seed_demo.sql
+```
+
+Inicia el servidor en una terminal y, desde otra, ejecuta el smoke test:
+
+```bash
+npm start
+npm run test:smoke
+```
+
+El smoke test usa `admin@almacen.com` / `admin123` por defecto y consulta `http://localhost:3000`. Puedes configurar `SMOKE_BASE_URL`, `SMOKE_EMAIL` y `SMOKE_PASSWORD` para otro entorno. Por defecto no escribe datos. El flag opcional `npm run test:smoke -- --write` crea una transferencia real de una unidad para probar el flujo completo.
+
+El script oficial `database/script_definitivo.sql` también inserta las cuentas iniciales: `admin@almacen.com` y `operario@almacen.com`, ambas con contraseña `admin123` en instalaciones nuevas.
 
 ## 📁 Estructura del Proyecto
 
 ```text
 sistema-inventario/
-├── db/                      # Esquema OFICIAL de la base de datos
-│   └── schema.sql           # Tablas + datos semilla (idempotente)
-├── database/                # Scripts históricos / alternativos (no usados por el backend actual)
-│   ├── migracion_simplificada.sql
-│   ├── supabase_wms_completo.sql
-│   ├── validaciones_constraints_triggers.sql
-│   └── wms_schema.sql
+├── database/                # Esquema oficial y reinicio solo para desarrollo
+│   ├── script_definitivo.sql
+│   └── reset_dev.sql
 ├── public/                  # Frontend estático servido por Express
 │   ├── app.js               # Controlador JS Vanilla, estado e interactividad
 │   ├── index.html           # Dashboard principal (Inventario, Historial, Gestión)
@@ -196,7 +222,6 @@ sistema-inventario/
 │   └── index.js             # Punto de entrada principal y servidor Express
 ├── .env.example             # Plantilla de variables de entorno
 ├── .gitignore               # Exclusiones para el repositorio Git
-├── database.sql             # ⚠️ Obsoleto (usar db/schema.sql)
 ├── package.json             # Manifiesto de dependencias y scripts de npm
 └── README.md                # Documentación oficial del proyecto
 ```

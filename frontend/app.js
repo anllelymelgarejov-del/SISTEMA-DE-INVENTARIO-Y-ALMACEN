@@ -20,6 +20,8 @@ const estadoApp = {
   productos: [],
   inventario: [],
   movimientos: [],
+  itemsTransferencia: [],
+  sugerenciaFefoSalida: null,
   idAlmacenActivo: null,
 };
 
@@ -205,6 +207,7 @@ async function cargarDatosIniciales() {
     renderizarPillsAlmacenes();
     renderizarTablaAlmacenActivo();
     poblarSelectoresModalMovimiento();
+    poblarSelectoresTransferencia();
   } catch (error) {
     console.error('Error al cargar datos iniciales:', error);
   }
@@ -853,6 +856,213 @@ window.exportarReporteWMS = exportarReporteWMS;
 // ============================================================================
 // 7. MODALES Y FORMULARIOS (CON PROVEEDOR / ORIGEN Y AUDITORÍA DE USUARIO)
 // ============================================================================
+function poblarSelectoresTransferencia() {
+  const origen = document.getElementById('transferencia-origen');
+  const destino = document.getElementById('transferencia-destino');
+  if (!origen || !destino) return;
+  const selectedOrigin = origen.value;
+  const selectedDestination = destino.value;
+  const options = '<option value="">Seleccione almacén...</option>' + estadoApp.almacenes
+    .map(a => `<option value="${a.id_almacen}">${escaparHtml(a.nombre)}</option>`).join('');
+  origen.innerHTML = options;
+  destino.innerHTML = options;
+  if (estadoApp.almacenes.some(a => String(a.id_almacen) === selectedOrigin)) origen.value = selectedOrigin;
+  if (estadoApp.almacenes.some(a => String(a.id_almacen) === selectedDestination)) destino.value = selectedDestination;
+  actualizarAlmacenesDestino();
+  renderizarOpcionesTransferencia();
+}
+
+function actualizarAlmacenesDestino() {
+  const origen = document.getElementById('transferencia-origen');
+  const destino = document.getElementById('transferencia-destino');
+  if (!origen || !destino) return;
+  const anterior = destino.value;
+  destino.innerHTML = '<option value="">Seleccione almacén...</option>' + estadoApp.almacenes
+    .filter(a => String(a.id_almacen) !== origen.value)
+    .map(a => `<option value="${a.id_almacen}">${escaparHtml(a.nombre)}</option>`).join('');
+  destino.value = estadoApp.almacenes.some(a => String(a.id_almacen) === anterior && String(a.id_almacen) !== origen.value) ? anterior : '';
+}
+
+function renderizarOpcionesTransferencia() {
+  const selector = document.getElementById('transferencia-lote');
+  const cantidad = document.getElementById('transferencia-cantidad');
+  const boton = document.getElementById('btn-agregar-item-transferencia');
+  if (!selector || !cantidad || !boton) return;
+  const origenId = document.getElementById('transferencia-origen')?.value;
+  const stockOrigen = estadoApp.inventario.filter(item => String(item.id_almacen) === origenId && Number(item.cantidad) > 0);
+  if (!origenId) {
+    selector.innerHTML = '<option value="">Primero seleccione el origen...</option>';
+    selector.disabled = cantidad.disabled = boton.disabled = true;
+    return;
+  }
+  selector.innerHTML = '<option value="">Seleccione producto y lote...</option>' + stockOrigen.map(item => {
+    const reservado = estadoApp.itemsTransferencia
+      .filter(x => String(x.producto_id) === String(item.id_producto) && String(x.lote_id) === String(item.id_lote))
+      .reduce((total, x) => total + x.cantidad, 0);
+    const disponible = Math.max(0, Number(item.cantidad) - reservado);
+    const stockProducto = stockOrigen.filter(row => String(row.id_producto) === String(item.id_producto)).reduce((total, row) => total + Number(row.cantidad), 0);
+    return `<option value="${item.id_producto}:${item.id_lote}" data-stock="${disponible}" data-product-stock="${stockProducto}" ${disponible === 0 ? 'disabled' : ''}>${escaparHtml(item.nombre_producto || item.producto || item.producto_nombre)} · lote ${escaparHtml(item.numero_lote)} · ${disponible} disponibles</option>`;
+  }).join('');
+  selector.disabled = stockOrigen.length === 0;
+  cantidad.disabled = true;
+  cantidad.value = '';
+  cantidad.removeAttribute('max');
+  boton.disabled = true;
+  if (!stockOrigen.length) selector.innerHTML = '<option value="">No hay stock disponible en este almacén</option>';
+}
+
+function renderizarItemsTransferencia() {
+  const tbody = document.getElementById('transferencia-items-pendientes');
+  const submit = document.getElementById('btn-registrar-transferencia');
+  if (!tbody || !submit) return;
+  submit.disabled = estadoApp.itemsTransferencia.length === 0;
+  if (!estadoApp.itemsTransferencia.length) {
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Agrega al menos un producto.</td></tr>';
+  } else {
+    tbody.innerHTML = estadoApp.itemsTransferencia.map((item, index) => `<tr>
+      <td>${escaparHtml(item.producto)} <small class="text-muted">${escaparHtml(item.codigo_barras || '')}</small></td>
+      <td>${escaparHtml(item.numero_lote)}</td><td class="text-end fw-semibold">${item.cantidad}</td>
+      <td class="text-center"><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-transferencia" data-index="${index}" aria-label="Quitar ${escaparHtml(item.producto)}"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('');
+    tbody.querySelectorAll('.btn-quitar-transferencia').forEach(button => button.addEventListener('click', () => {
+      estadoApp.itemsTransferencia.splice(Number(button.dataset.index), 1);
+      renderizarItemsTransferencia();
+      renderizarOpcionesTransferencia();
+    }));
+  }
+}
+
+async function cargarHistorialTransferencias() {
+  const tbody = document.getElementById('transferencias-historial');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Cargando transferencias...</td></tr>';
+  try {
+    const response = await fetchAutenticado('/api/transferencias');
+    const transferencias = Array.isArray(response.data) ? response.data : [];
+    if (!transferencias.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay transferencias registradas.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = transferencias.map(t => {
+      const items = Array.isArray(t.items) ? t.items : [];
+      const detalle = items.length
+        ? `<details><summary class="text-primary">${items.length} producto(s)</summary><ul class="small mb-0 mt-2 ps-3">${items.map(i => `<li>${escaparHtml(i.producto)} · lote ${escaparHtml(i.numero_lote)} · ${Number(i.cantidad)} uds</li>`).join('')}</ul></details>`
+        : 'Sin detalle';
+      return `<tr><td class="ps-3">${escaparHtml(formatearFechaHoraAuditoria(t.fecha))}</td><td>${escaparHtml(t.almacen_origen)}</td><td>${escaparHtml(t.almacen_destino)}</td><td>${escaparHtml(t.usuario || 'Sistema')}</td><td><span class="badge bg-success-subtle text-success">${escaparHtml(t.estado || 'Completado')}</span></td><td>${detalle}</td></tr>`;
+    }).join('');
+  } catch (error) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">${escaparHtml(error.message)}</td></tr>`;
+  }
+}
+
+function configurarTransferencias() {
+  const origen = document.getElementById('transferencia-origen');
+  const destino = document.getElementById('transferencia-destino');
+  const selector = document.getElementById('transferencia-lote');
+  const cantidad = document.getElementById('transferencia-cantidad');
+  const botonAgregar = document.getElementById('btn-agregar-item-transferencia');
+  const form = document.getElementById('form-transferencia');
+  if (!form || !origen || !destino || !selector || !cantidad || !botonAgregar) return;
+
+  document.getElementById('btn-fefo-transferencia')?.addEventListener('click', async () => {
+    const [productoId] = selector.value.split(':').map(Number);
+    const unidades = Number(cantidad.value);
+    const feedback = document.getElementById('transferencia-fefo-feedback');
+    if (!origen.value || !productoId || !Number.isInteger(unidades) || unidades <= 0) {
+      feedback.className = 'small ms-2 text-danger'; feedback.textContent = 'Selecciona un producto y una cantidad.'; return;
+    }
+    try {
+      const s = await fetchAutenticado(`/api/inventario/sugerir-fefo?almacen_id=${encodeURIComponent(origen.value)}&producto_id=${productoId}&cantidad=${unidades}`);
+      if (!s.lotes?.length) throw new Error('No hay stock vigente para sugerir.');
+      if (s.insuficiente) throw new Error(`Stock vigente insuficiente; faltan ${s.faltante} unidades.`);
+      const inventarioProducto = estadoApp.inventario.find(x => Number(x.id_producto) === productoId && String(x.id_almacen) === origen.value);
+      estadoApp.itemsTransferencia = estadoApp.itemsTransferencia.filter(x => Number(x.producto_id) !== productoId);
+      for (const lote of s.lotes) {
+        const item = estadoApp.inventario.find(x => Number(x.id_producto) === productoId && Number(x.id_lote) === Number(lote.id_lote) && String(x.id_almacen) === origen.value);
+        if (!item) continue;
+        estadoApp.itemsTransferencia.push({ producto_id: productoId, lote_id: Number(lote.id_lote), cantidad: Number(lote.cantidad_sugerida), producto: item.nombre_producto || item.producto || item.producto_nombre, codigo_barras: item.codigo_barras, numero_lote: item.numero_lote });
+      }
+      renderizarItemsTransferencia(); renderizarOpcionesTransferencia();
+      feedback.className = 'small ms-2 text-success'; feedback.textContent = `Asignados ${s.lotes.length} lote(s) por FEFO para ${inventarioProducto?.nombre_producto || inventarioProducto?.producto || 'el producto'}.`;
+    } catch (error) { feedback.className = 'small ms-2 text-danger'; feedback.textContent = error.message; }
+  });
+
+  origen.addEventListener('change', () => {
+    estadoApp.itemsTransferencia = [];
+    renderizarItemsTransferencia();
+    actualizarAlmacenesDestino();
+    renderizarOpcionesTransferencia();
+  });
+  destino.addEventListener('change', () => {
+    if (origen.value && destino.value === origen.value) destino.value = '';
+  });
+  selector.addEventListener('change', () => {
+    const option = selector.selectedOptions[0];
+    const stock = Number(option?.dataset.stock || 0);
+    cantidad.max = String(Number(option?.dataset.productStock || stock));
+    cantidad.value = '';
+    cantidad.disabled = !selector.value || stock <= 0;
+    botonAgregar.disabled = cantidad.disabled;
+  });
+  cantidad.addEventListener('input', () => {
+    const max = Number(cantidad.max || 0);
+    botonAgregar.disabled = !Number.isInteger(Number(cantidad.value)) || Number(cantidad.value) <= 0 || Number(cantidad.value) > max;
+  });
+  botonAgregar.addEventListener('click', () => {
+    const [productoId, loteId] = selector.value.split(':').map(Number);
+    const item = estadoApp.inventario.find(row => Number(row.id_producto) === productoId && Number(row.id_lote) === loteId && String(row.id_almacen) === origen.value);
+    const unidades = Number(cantidad.value);
+    const reservado = estadoApp.itemsTransferencia.filter(x => x.producto_id === productoId && x.lote_id === loteId).reduce((sum, x) => sum + x.cantidad, 0);
+    if (!item || !Number.isInteger(unidades) || unidades <= 0 || unidades > Number(item.cantidad) - reservado) return;
+    estadoApp.itemsTransferencia.push({
+      producto_id: productoId, lote_id: loteId, cantidad: unidades,
+      producto: item.nombre_producto || item.producto || item.producto_nombre,
+      codigo_barras: item.codigo_barras, numero_lote: item.numero_lote,
+    });
+    renderizarItemsTransferencia();
+    renderizarOpcionesTransferencia();
+  });
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const feedback = document.getElementById('transferencia-feedback');
+    const submit = document.getElementById('btn-registrar-transferencia');
+    if (!origen.value || !destino.value || origen.value === destino.value || !estadoApp.itemsTransferencia.length) {
+      feedback.className = 'ms-2 small text-danger';
+      feedback.textContent = 'Selecciona dos almacenes distintos y agrega productos.';
+      return;
+    }
+    submit.disabled = true;
+    feedback.className = 'ms-2 small text-muted';
+    feedback.textContent = 'Registrando transferencia...';
+    try {
+      const response = await fetchAutenticado('/api/transferencias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id_almacen_origen: Number(origen.value),
+          id_almacen_destino: Number(destino.value),
+          observaciones: document.getElementById('transferencia-notas')?.value?.trim() || '',
+          items: estadoApp.itemsTransferencia.map(({ producto_id, lote_id, cantidad: unidades }) => ({ producto_id, lote_id, cantidad: unidades })),
+        }),
+      });
+      estadoApp.itemsTransferencia = [];
+      form.reset();
+      renderizarItemsTransferencia();
+      feedback.className = 'ms-2 small text-success';
+      feedback.textContent = response.mensaje || 'Transferencia registrada.';
+      await cargarDatosIniciales();
+      await Promise.all([cargarHistorialTransferencias(), cargarHistorialMovimientos()]);
+      document.getElementById('dashboard-refresh')?.click();
+    } catch (error) {
+      feedback.className = 'ms-2 small text-danger';
+      feedback.textContent = error.message;
+      submit.disabled = false;
+    }
+  });
+
+  document.getElementById('btn-recargar-transferencias')?.addEventListener('click', cargarHistorialTransferencias);
+  document.getElementById('tab-transferencias-btn')?.addEventListener('shown.bs.tab', cargarHistorialTransferencias);
+}
+
 function poblarSelectoresModalMovimiento() {
   const selAlm = document.getElementById('mov-id-almacen');
   const selProd = document.getElementById('mov-id-producto');
@@ -882,6 +1092,8 @@ function actualizarEtiquetaProveedorSegunTipo() {
       inputProv.placeholder = 'Seleccione o escriba el proveedor u origen (Opcional)...';
     }
   }
+  const fefoButton = document.getElementById('btn-fefo-salida');
+  if (fefoButton) fefoButton.hidden = !esSalida;
 }
 
 function abrirModalMovimientoPreseleccionado({ idAlmacen, idProducto, numeroLote }) {
@@ -906,6 +1118,26 @@ function configurarFormularios() {
   if (radioEntrada) radioEntrada.addEventListener('change', actualizarEtiquetaProveedorSegunTipo);
   if (radioSalida) radioSalida.addEventListener('change', actualizarEtiquetaProveedorSegunTipo);
 
+  const btnFefoSalida = document.getElementById('btn-fefo-salida');
+  btnFefoSalida?.addEventListener('click', async () => {
+    const almacen = document.getElementById('mov-id-almacen')?.value;
+    const producto = document.getElementById('mov-id-producto')?.value;
+    const cantidad = Number(document.getElementById('mov-cantidad')?.value);
+    const feedback = document.getElementById('salida-fefo-feedback');
+    if (!almacen || !producto || !Number.isInteger(cantidad) || cantidad <= 0) { feedback.className = 'small text-danger'; feedback.textContent = 'Selecciona almacén, producto y cantidad.'; return; }
+    try {
+      const s = await fetchAutenticado(`/api/inventario/sugerir-fefo?almacen_id=${encodeURIComponent(almacen)}&producto_id=${encodeURIComponent(producto)}&cantidad=${cantidad}`);
+      if (!s.lotes?.length) throw new Error('No hay stock vigente para sugerir.');
+      if (s.insuficiente) throw new Error(`Stock vigente insuficiente; faltan ${s.faltante} unidades.`);
+      estadoApp.sugerenciaFefoSalida = { almacen: Number(almacen), producto: Number(producto), cantidad, lotes: s.lotes };
+      const primero = s.lotes[0];
+      document.getElementById('mov-numero-lote').value = primero.numero_lote;
+      document.getElementById('mov-cantidad').value = primero.cantidad_sugerida;
+      feedback.className = 'small text-success'; feedback.textContent = `Asignados ${s.lotes.length} lotes por FEFO: ${s.lotes.map(x => `${x.numero_lote} (${x.cantidad_sugerida})`).join(', ')}. Al confirmar se registrará el desglose completo.`;
+    } catch (error) { estadoApp.sugerenciaFefoSalida = null; feedback.className = 'small text-danger'; feedback.textContent = error.message; }
+  });
+  ['mov-id-almacen', 'mov-id-producto', 'mov-numero-lote', 'mov-cantidad'].forEach(id => document.getElementById(id)?.addEventListener('input', () => { estadoApp.sugerenciaFefoSalida = null; }));
+
   // 1. Formulario Movimiento de Stock (con proveedor, observacion e id_usuario)
   const formMov = document.getElementById('form-movimiento-lote');
   if (formMov) {
@@ -923,6 +1155,14 @@ function configurarFormularios() {
       const id_usuario = estadoApp.usuario?.id_usuario || 1;
 
       try {
+        const sugerencia = estadoApp.sugerenciaFefoSalida;
+        let mensajeMovimiento = '';
+        if (tipo === 'SALIDA' && sugerencia && sugerencia.almacen === Number(id_almacen) && sugerencia.producto === Number(id_producto)) {
+          for (const lote of sugerencia.lotes) {
+            const r = await fetchAutenticado('/api/movimientos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tipo, id_almacen, id_producto, numero_lote: lote.numero_lote, cantidad: Number(lote.cantidad_sugerida), proveedor, observacion, id_usuario }) });
+            mensajeMovimiento = r.mensaje || mensajeMovimiento;
+          }
+        } else {
         const respuesta = await fetchAutenticado('/api/movimientos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -938,16 +1178,19 @@ function configurarFormularios() {
             id_usuario,
           }),
         });
+        mensajeMovimiento = respuesta.mensaje;
+        }
 
         Swal.fire({
           icon: 'success',
           title: 'Operación Exitosa',
-          text: respuesta.mensaje || 'Movimiento procesado y auditado correctamente.',
+          text: mensajeMovimiento || 'Movimiento procesado y auditado correctamente.',
           timer: 2000,
           showConfirmButton: false,
         });
 
         formMov.reset();
+        estadoApp.sugerenciaFefoSalida = null;
         actualizarEtiquetaProveedorSegunTipo();
         bootstrap.Modal.getInstance(document.getElementById('modal-movimiento-lote'))?.hide();
         await cargarDatosIniciales();
@@ -1092,6 +1335,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!verificarYConfigurarSesion()) return;
   configurarLogout();
   configurarFormularios();
+  configurarTransferencias();
   configurarEventosYProteccion();
   cargarDatosIniciales();
 });

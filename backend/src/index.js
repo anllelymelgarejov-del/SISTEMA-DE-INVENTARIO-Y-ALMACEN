@@ -11,6 +11,8 @@ const productosRoutes = require('./routes/productos');
 const inventarioRoutes = require('./routes/inventario');
 const movimientosRoutes = require('./routes/movimientos');
 const reportesRoutes = require('./routes/reportes');
+const transferenciasRoutes = require('./routes/transferencias');
+const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -49,6 +51,10 @@ app.use('/api/movimientos', require('./routes/movimientos'));
 
 // Reportes
 app.use('/api/reportes', reportesRoutes);
+
+// Transferencias de stock entre almacenes (requiere JWT en todas sus rutas)
+app.use('/api/transferencias', transferenciasRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Endpoint informativo y de salud de la API
 app.get('/api', (req, res) => {

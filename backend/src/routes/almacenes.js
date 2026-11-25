@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
       SELECT 
         id_almacen, 
         nombre, 
-        direccion 
+        ubicacion AS direccion
       FROM almacenes 
       ORDER BY id_almacen ASC;
     `;
@@ -55,7 +55,7 @@ router.get('/:id', async (req, res) => {
       SELECT 
         id_almacen, 
         nombre, 
-        direccion 
+        ubicacion AS direccion
       FROM almacenes 
       WHERE id_almacen = $1;
     `;
