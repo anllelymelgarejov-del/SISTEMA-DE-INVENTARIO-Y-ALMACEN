@@ -91,11 +91,12 @@
        ========================================================================== */
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: #0b1120;
-      /* Superposición oscura (87% - 90% opacidad) + Imagen de estanterías de almacén/farmacia */
+      background-color: #050c1e;
       background-image:
-        linear-gradient(135deg, rgba(10, 15, 29, 0.88) 0%, rgba(15, 23, 42, 0.86) 50%, rgba(17, 24, 39, 0.90) 100%),
-        url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1920&q=85');
+        radial-gradient(circle at 18% 12%, rgba(37, 99, 235, 0.24) 0%, transparent 42%),
+        radial-gradient(circle at 82% 18%, rgba(14, 165, 233, 0.18) 0%, transparent 46%),
+        radial-gradient(circle at 50% 90%, rgba(29, 78, 216, 0.2) 0%, transparent 50%),
+        linear-gradient(180deg, #061026 0%, #081533 48%, #050c1e 100%);
       background-size: cover;
       background-position: center center;
       background-attachment: fixed;
@@ -109,8 +110,8 @@
 
     body:has(#user-rol.bg-success) {
       background-image:
-        linear-gradient(135deg, rgba(6, 34, 29, 0.86) 0%, rgba(15, 23, 42, 0.87) 55%, rgba(9, 29, 26, 0.90) 100%),
-        url('https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1920&q=85');
+        radial-gradient(circle at 18% 12%, rgba(16, 185, 129, 0.2) 0%, transparent 45%),
+        linear-gradient(180deg, #041d1b 0%, #072629 52%, #050c1e 100%);
     }
 
     h1, h2, h3, h4, h5, h6, .navbar-brand, .exec-title, .op-card-title {
@@ -200,37 +201,13 @@
       letter-spacing: 0.01em;
     }
 
-    /* Botones de cabecera */
-    #btn-nuevo-producto-nav {
-      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
-      border: 1px solid rgba(147, 197, 253, 0.35) !important;
-      font-weight: 600;
-      padding: 0.5rem 1rem !important;
-      border-radius: 0.75rem !important;
-      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-      transition: var(--inv-transition);
-    }
-    #btn-nuevo-producto-nav:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.45);
-      filter: brightness(1.06);
-    }
-
+    /* Botones de acción en píldora del Sidebar */
+    #btn-nuevo-producto-nav,
     #btn-movimiento-nav {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.24);
-      color: #f8fafc;
-      font-weight: 600;
-      padding: 0.5rem 1rem !important;
-      border-radius: 0.75rem !important;
-      backdrop-filter: blur(6px);
+      border-radius: 999px !important;
+      padding: 0.72rem 1rem !important;
+      font-weight: 700;
       transition: var(--inv-transition);
-    }
-    #btn-movimiento-nav:hover {
-      background: rgba(255, 255, 255, 0.18);
-      border-color: rgba(255, 255, 255, 0.45);
-      transform: translateY(-2px);
-      color: #ffffff;
     }
 
     #btn-operario-entrada {
@@ -1914,299 +1891,502 @@
     }
   </style>
 </head>
-<body>
+<body class="wms-cobalt-body">
 
-  <!-- ========================================== -->
-  <!-- 1. NAVBAR SUPERIOR ESTILIZADO              -->
-  <!-- ========================================== -->
-  <nav class="navbar navbar-expand-lg navbar-dark inv-navbar sticky-top bg-dark border-bottom border-success border-opacity-25">
-    <div class="container-fluid px-3 px-lg-4">
-      
-      <!-- LADO IZQUIERDO: Logo Corporativo, Título y Bajada FEFO con Icono Escudo -->
-      <a class="navbar-brand d-flex align-items-center gap-3 brand-capsule" href="index.html">
-        <div class="brand-icon-box text-white d-flex align-items-center justify-content-center">
-          <i class="fa-solid fa-boxes-stacked fs-5"></i>
-        </div>
-        <div>
-          <span class="brand-title-text d-block lh-1">SISTEMA DE INVENTARIO Y ALMACÉN</span>
-          <span class="brand-subtitle-text lh-1 d-block mt-1">
-            <i class="fa-solid fa-shield-halved me-1 text-success"></i>Control Inteligente de Almacenes, Stock y Trazabilidad FEFO
-          </span>
-        </div>
-      </a>
+  <!-- Backdrop móvil para la barra lateral -->
+  <div class="wms-sidebar-backdrop" id="wms-sidebar-backdrop"></div>
 
-      <!-- Botón Colapsable Móvil -->
-      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#invNavbarContent" aria-controls="invNavbarContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+  <div class="wms-app-shell">
 
-      <!-- Menú y Acciones Principales -->
-      <div class="collapse navbar-collapse" id="invNavbarContent">
-        
-        <!-- Acciones en Cabecera (Exclusivo 'ADMIN' - Oculto para Operario) -->
-        <div class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-4 d-flex align-items-center gap-2 pt-2 pt-lg-0 solo-admin">
-          <!-- BOTÓN ÚNICO: + Nuevo Producto (EXCLUSIVO 'ADMIN') -->
-          <button id="btn-nuevo-producto-nav" class="btn btn-sm btn-primary d-flex align-items-center gap-2 solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto">
-            <i class="fa-solid fa-plus-circle"></i>
-            <span>+ Nuevo Producto</span>
-          </button>
-
-          <!-- BOTÓN GENERAL ADMIN: Entrada / Salida por Lote -->
-          <button id="btn-movimiento-nav" class="btn btn-sm btn-outline-light d-flex align-items-center gap-2 solo-admin" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
-            <i class="fa-solid fa-arrow-right-arrow-left"></i>
-            <span>Entrada / Salida por Lote</span>
-          </button>
-        </div>
-
-        <!-- LADO DERECHO: Cápsula Unificada de Sesión y Salida -->
-        <div class="ms-auto d-flex align-items-center pt-2 pt-lg-0">
-          <div class="user-session-capsule d-flex align-items-center gap-2.5 p-1.5 ps-3 rounded-pill border border-success border-opacity-25 bg-dark bg-opacity-75 shadow-sm">
-            
-            <!-- Distintivo TERMINAL OPERATIVA -->
-            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1.5 rounded-pill fw-bold d-inline-flex align-items-center gap-1.5 solo-operario" style="font-size: 0.68rem; letter-spacing: 0.04em;">
-              <i class="fa-solid fa-bolt"></i>
-              <span>TERMINAL OPERATIVA</span>
-            </span>
-
-            <!-- Distintivo SUITE EJECUTIVA (Exclusivo Admin) -->
-            <span class="badge bg-info bg-opacity-25 text-info border border-info border-opacity-50 px-2.5 py-1.5 rounded-pill fw-bold d-inline-flex align-items-center gap-1.5 solo-admin" style="font-size: 0.68rem; letter-spacing: 0.04em;">
-              <i class="fa-solid fa-shield-halved"></i>
-              <span>SUITE EJECUTIVA</span>
-            </span>
-
-            <!-- Divisor Vertical Sutil -->
-            <div class="vr bg-secondary opacity-25 my-1 d-none d-sm-block"></div>
-
-            <!-- Avatar con Iniciales "AN", Nombre "Anllely" y Rol "OPERARIO" -->
-            <div class="d-flex align-items-center gap-2">
-              <div class="rounded-circle fw-bold d-flex align-items-center justify-content-center text-white bg-success shadow-xs" style="width: 34px; height: 34px; font-size: 0.82rem;" id="user-avatar-initials">
-                AN
-              </div>
-              <div class="d-none d-sm-block text-start pe-1">
-                <div class="small fw-semibold text-white lh-1" id="user-nombre">Anllely</div>
-                <span class="badge mt-1" id="user-rol">OPERARIO</span>
-              </div>
-            </div>
-
-            <!-- Botón Salir con Ícono arrow-right-from-bracket -->
-            <button id="btn-logout" class="btn btn-sm d-flex align-items-center gap-1.5 ms-1" title="Cerrar Sesión" data-tooltip="Finalizar sesión de forma segura">
-              <i class="fa-solid fa-arrow-right-from-bracket"></i>
-              <span class="d-none d-md-inline">Salir</span>
-            </button>
-            
+    <!-- ========================================================== -->
+    <!-- 1A. BARRA LATERAL IZQUIERDA (SIDEBAR "SIA" LIMPIO)         -->
+    <!-- ========================================================== -->
+    <aside class="wms-sidebar" id="wms-sidebar" aria-label="Navegación principal del sistema">
+      <div class="wms-sidebar-brand">
+        <a href="index.html" class="wms-sidebar-logo-link">
+          <div class="wms-sidebar-logo-icon">
+            <i class="fa-solid fa-boxes-stacked"></i>
           </div>
-        </div>
-
-      </div>
-    </div>
-  </nav>
-
-  <!-- ========================================== -->
-  <!-- 2. CONTENIDO PRINCIPAL Y PANELES POR ROL   -->
-  <!-- ========================================== -->
-  <div class="container-fluid px-3 px-lg-4 py-4 flex-grow-1">
-
-    <!-- ==================================================================== -->
-    <!-- 2A. BANNER SUPERIOR EJECUTIVO (EXCLUSIVO ROL ADMINISTRADOR)          -->
-    <!-- ==================================================================== -->
-    <div class="admin-executive-banner p-4 p-lg-4 mb-4 solo-admin">
-      <div class="py-1">
-        <div class="exec-badge-pill mb-2">
-          <i class="fa-solid fa-shield-halved"></i>
-          <span>Panel de Dirección &amp; Control Total WMS</span>
-        </div>
-        <h3 class="mb-2 exec-title">Centro de Gobierno de Inventarios y Catálogo</h3>
-        <p class="exec-description mb-0">
-          Supervisión multi-almacén en tiempo real, auditoría de trazabilidad FEFO, administración del catálogo maestro y control de privilegios de usuarios.
-        </p>
-      </div>
-    </div>
-
-    <!-- ==================================================================== -->
-    <!-- 2B. PANEL DE AGILIDAD OPERATIVA (EXCLUSIVO ROL OPERARIO)             -->
-    <!-- ==================================================================== -->
-    <div class="operario-workspace-header mb-4 solo-operario">
-      <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-        <div class="d-flex align-items-center gap-2.5">
-          <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1.5 rounded-pill fw-bold">
-            <i class="fa-solid fa-bolt me-1"></i> TERMINAL DE OPERACIONES ÁGILES
-          </span>
-          <span class="text-muted small d-none d-md-inline">
-            Seleccione una tarjeta de acceso directo para registrar ingresos o despachos de mercancía al instante.
-          </span>
-        </div>
-        <span class="small fw-semibold text-success">
-          <i class="fa-solid fa-circle-check me-1"></i> Prioridad de Despacho: Primero en Vencer, Primero en Salir (FEFO)
-        </span>
+          <span class="wms-sia-acronym">SIA</span>
+        </a>
       </div>
 
-      <div class="row g-3">
-        <!-- Tarjeta Grande 1: Registrar Entrada -->
-        <div class="col-md-4">
-          <button type="button" id="btn-operario-entrada" class="op-quick-card op-card-entrada" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
-            <div class="op-icon-circle">
-              <i class="fa-solid fa-truck-ramp-box"></i>
-            </div>
-            <div>
-              <span class="badge bg-success bg-opacity-10 text-success fw-bold mb-1" style="font-size: 0.68rem;">INGRESO DE MERCANCÍA (+)</span>
-              <h6 class="fw-bold text-dark mb-0 op-card-title">📥 Registrar Entrada de Lote</h6>
-              <small class="text-muted d-block mt-0.5">Recepción en almacén y registro de caducidad</small>
-            </div>
-          </button>
-        </div>
+      <!-- Acciones Rápidas (Únicamente estos dos en estilo botón píldora - Solo Admin) -->
+      <div class="wms-sidebar-pills-group solo-admin" id="wms-sidebar-pills">
+        <button type="button" id="btn-nuevo-producto-nav" class="wms-sidebar-pill-btn solo-admin" data-bs-toggle="modal" data-bs-target="#modal-nuevo-producto">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span>Nuevo Producto</span>
+        </button>
 
-        <!-- Tarjeta Grande 2: Registrar Salida / Despacho -->
-        <div class="col-md-4">
-          <button type="button" id="btn-operario-salida" class="op-quick-card op-card-salida" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
-            <div class="op-icon-circle">
-              <i class="fa-solid fa-dolly"></i>
-            </div>
-            <div>
-              <span class="badge bg-danger bg-opacity-10 text-danger fw-bold mb-1" style="font-size: 0.68rem;">ORDEN DE DESPACHO (-)</span>
-              <h6 class="fw-bold text-dark mb-0 op-card-title">📤 Registrar Salida / Despacho</h6>
-              <small class="text-muted d-block mt-0.5">Descuento ágil de unidades disponibles por lote</small>
-            </div>
-          </button>
-        </div>
-
-        <!-- Tarjeta Grande 3: Consulta Rápida de Movimientos -->
-        <div class="col-md-4">
-          <button type="button" class="op-quick-card op-card-kardex" onclick="const t=document.getElementById('tab-hist-btn'); if(t){ bootstrap.Tab.getOrCreateInstance(t).show(); cargarHistorialMovimientos(); }">
-            <div class="op-icon-circle">
-              <i class="fa-solid fa-clipboard-check"></i>
-            </div>
-            <div>
-              <span class="badge bg-info bg-opacity-10 text-info fw-bold mb-1" style="font-size: 0.68rem;">TRAZABILIDAD EN VIVO</span>
-              <h6 class="fw-bold text-dark mb-0 op-card-title">📋 Ver Kardex Reciente</h6>
-              <small class="text-muted d-block mt-0.5">Verificar últimos ingresos y despachos realizados</small>
-            </div>
-          </button>
-        </div>
+        <button type="button" id="btn-movimiento-nav" class="wms-sidebar-pill-btn" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
+          <i class="fa-solid fa-arrow-right-arrow-left"></i>
+          <span>Entrada / Salida por Lote</span>
+        </button>
       </div>
-    </div>
 
-    <!-- ==================================================================== -->
-    <!-- 2C. MENÚ DE PESTAÑAS PRINCIPAL                                       -->
-    <!-- ==================================================================== -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-      <ul class="nav nav-tabs fw-bold" id="mainTab" role="tablist">
-        <li class="nav-item" role="presentation">
-          <button class="nav-link d-flex align-items-center gap-2" id="tab-dashboard-btn" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button" role="tab" aria-controls="tab-dashboard" aria-selected="false">
-            <i class="fa-solid fa-chart-pie text-primary" aria-hidden="true"></i>
+      <!-- Menú de Navegación Uniforme (Estilo limpio tipo Historial de Movimientos) -->
+      <ul class="wms-sidebar-nav" id="wms-sidebar-nav">
+        <li>
+          <button type="button" class="wms-sidebar-link" data-sidebar-target="#tab-dashboard-btn" data-sidebar-nav="dashboard">
+            <i class="fa-solid fa-chart-pie"></i>
             <span>Dashboard</span>
           </button>
         </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link active d-flex align-items-center gap-2" id="tab-inv-btn" data-bs-toggle="tab" data-bs-target="#tab-inventario" type="button" role="tab">
-            <i class="fa-solid fa-boxes-stacked text-primary"></i>
-            <span>Inventario y Almacenes</span>
+        <li>
+          <button type="button" class="wms-sidebar-link active" data-sidebar-target="#tab-inv-btn" data-sidebar-nav="inventario">
+            <i class="fa-solid fa-boxes-stacked"></i>
+            <span>Inventario y Almacén</span>
           </button>
         </li>
-        <li class="nav-item" role="presentation">
-          <button class="nav-link d-flex align-items-center gap-2" id="tab-hist-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab" onclick="cargarHistorialMovimientos()">
-            <i class="fa-solid fa-clock-rotate-left text-info"></i>
+        <li>
+          <button type="button" class="wms-sidebar-link" data-sidebar-target="#tab-hist-btn" data-sidebar-nav="reportes">
+            <i class="fa-solid fa-clock-rotate-left"></i>
             <span>Historial de Movimientos</span>
           </button>
         </li>
-        <li class="nav-item solo-admin" role="presentation" id="nav-item-gestion-admin">
-          <button class="nav-link d-flex align-items-center gap-2" id="tab-gest-btn" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button" role="tab">
-            <i class="fa-solid fa-user-shield text-danger"></i>
+        <li class="solo-admin">
+          <button type="button" class="wms-sidebar-link" data-sidebar-target="#tab-gest-btn" data-sidebar-nav="configuracion">
+            <i class="fa-solid fa-user-shield"></i>
             <span>Gestión del Sistema</span>
           </button>
         </li>
+        <li>
+          <button type="button" class="wms-sidebar-link" id="btn-sidebar-ayuda" data-sidebar-nav="ayuda">
+            <i class="fa-solid fa-circle-question"></i>
+            <span>Ayuda</span>
+          </button>
+        </li>
+        <li class="mt-auto pt-3 wms-sidebar-logout-item">
+          <button type="button" class="wms-sidebar-link wms-sidebar-logout-link" id="btn-sidebar-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            <span>Cerrar Sesión</span>
+          </button>
+        </li>
       </ul>
+    </aside>
 
-      <div class="d-none d-xl-flex align-items-center gap-2 text-muted small helper-bar-pill">
-        <i class="fa-solid fa-circle-info text-info"></i>
-        <span>Use el botón de acción rápida <kbd class="bg-light text-dark border">⇄</kbd> en cada fila para operar un lote directamente.</span>
-      </div>
-    </div>
+    <!-- ========================================================== -->
+    <!-- 1B. ÁREA DE TRABAJO PRINCIPAL (TOPBAR + CONTENIDO)         -->
+    <!-- ========================================================== -->
+    <div class="wms-main-workspace">
 
-    <!-- CONTENIDO DE LAS PESTAÑAS -->
-    <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom shadow-sm" id="mainTabContent">
-      <div class="tab-pane fade" id="tab-dashboard" role="tabpanel" aria-labelledby="tab-dashboard-btn" tabindex="0">
-        <section class="dashboard" aria-label="Resumen de inventario y almacenes">
-          <div class="dash-header">
-            <div>
-              <span class="dash-eyebrow">Vista general de operaciones</span>
-              <h2>Dashboard de inventario</h2>
-              <p class="dash-muted mb-1">Tus existencias, movimientos y prioridades en un solo lugar.</p>
-              <div class="dash-muted" id="dashboard-updated">Los datos se cargarán al abrir esta pestaña.</div>
-            </div>
-            <div class="dash-controls">
-              <div class="dash-select-wrap">
-                <label for="dashboard-warehouse">Almacén</label>
-                <select id="dashboard-warehouse" class="form-select form-select-sm"><option value="">Todos los almacenes</option></select>
+      <!-- BARRA SUPERIOR COMPACTA (TOPBAR) -->
+      <nav class="navbar navbar-expand-lg navbar-dark inv-navbar wms-topbar sticky-top">
+        <div class="container-fluid px-2 px-lg-3">
+
+          <!-- Botón menú lateral en móvil + Escudo/Título SISTEMA DE INVENTARIO Y ALMACÉN -->
+          <div class="d-flex align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-info d-lg-none px-2.5 py-1.5 rounded-3" type="button" id="btn-sidebar-toggle" aria-label="Abrir menú lateral">
+              <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <a class="navbar-brand d-flex align-items-center gap-2.5 brand-capsule m-0 py-1.5 px-3" href="index.html">
+              <div class="brand-icon-box text-white d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                <i class="fa-solid fa-shield-halved"></i>
               </div>
-              <button type="button" id="dashboard-refresh" class="btn dash-refresh d-flex align-items-center gap-2"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualizar</button>
+              <div>
+                <span class="brand-title-text d-block lh-1" style="font-size: 0.94rem;">SISTEMA DE INVENTARIO Y ALMACÉN</span>
+                <span class="brand-subtitle-text lh-1 d-none d-sm-block mt-1" style="font-size: 0.7rem;">
+                  <i class="fa-solid fa-circle-check me-1 text-info"></i>Control Inteligente de Almacenes, Stock y Trazabilidad FEFO
+                </span>
+              </div>
+            </a>
+          </div>
+
+          <!-- Botón Colapsable Móvil -->
+          <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#invNavbarContent" aria-controls="invNavbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+
+          <!-- Controles Derechos del Topbar (Esenciales y Limpios) -->
+          <div class="collapse navbar-collapse" id="invNavbarContent">
+            <div class="ms-auto d-flex flex-wrap align-items-center gap-2.5 pt-2 pt-lg-0">
+
+              <!-- Campanita de Notificaciones con Badge Rojo y Menú Dropdown Propio -->
+              <div class="dropdown">
+                <button type="button" class="wms-notif-btn" id="btn-topbar-notificaciones" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Centro de Alertas FEFO y Stock Mínimo" data-tooltip="Abrir centro de notificaciones">
+                  <i class="fa-solid fa-bell"></i>
+                  <span class="wms-notif-badge" id="topbar-notif-count">0</span>
+                </button>
+
+                <div class="dropdown-menu dropdown-menu-end wms-notif-dropdown-menu p-0" aria-labelledby="btn-topbar-notificaciones" id="dropdown-notificaciones-wms">
+                  <div class="wms-notif-header d-flex align-items-center justify-content-between">
+                    <div>
+                      <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-bell text-info"></i>
+                        <span>Alertas Activas WMS</span>
+                      </div>
+                      <small class="text-info opacity-75" style="font-size: 0.7rem;">Monitoreo FEFO y Punto de Reorden</small>
+                    </div>
+                    <span class="badge rounded-pill bg-danger" id="notif-dropdown-badge-total">0 alertas</span>
+                  </div>
+
+                  <div class="wms-notif-body" id="lista-notificaciones-wms">
+                    <div class="text-center py-4 text-muted small">
+                      <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                      Analizando lotes y niveles de stock...
+                    </div>
+                  </div>
+
+                  <div class="wms-notif-footer d-flex align-items-center justify-content-between gap-2">
+                    <button type="button" class="btn btn-sm btn-link text-decoration-none p-0 fw-bold text-primary" id="btn-notif-ver-dashboard" style="font-size: 0.78rem;">
+                      <i class="fa-solid fa-chart-pie me-1"></i>Ver alertas en el Dashboard
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2 rounded-2" id="btn-notif-actualizar" title="Recargar alertas" style="font-size: 0.74rem; min-height: 28px;">
+                      <i class="fa-solid fa-rotate"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selector / Indicador de Usuario: Administrador -->
+              <div class="wms-role-indicator-pill d-inline-flex">
+                <i class="fa-solid fa-user-tie text-info"></i>
+                <span>Usuario: <strong class="text-white" id="topbar-role-label">Administrador</strong></span>
+              </div>
+
+              <!-- Elementos ocultos de sesión requeridos por app.js y selectores CSS :has(#user-rol) -->
+              <div class="d-none" aria-hidden="true">
+                <div id="user-avatar-initials">AD</div>
+                <div id="user-nombre">Administrador</div>
+                <span class="badge bg-danger" id="user-rol">ADMIN</span>
+                <button id="btn-logout" type="button">Salir</button>
+              </div>
+
             </div>
           </div>
-          <div id="dashboard-status" class="dash-status" role="status" aria-live="polite">Abre el dashboard para consultar los datos.</div>
-          <div id="dashboard-content" hidden aria-busy="false">
-            <div class="dash-stats">
-              <article class="dash-card">
-                <div class="dash-stat-top"><span>Productos con stock</span><span class="dash-icon"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i></span></div>
-                <strong id="dashboard-products" class="dash-value">0</strong><span class="dash-muted">Productos distintos con existencias</span>
-              </article>
-              <article class="dash-card">
-                <div class="dash-stat-top"><span>Unidades disponibles</span><span class="dash-icon"><i class="fa-solid fa-cubes" aria-hidden="true"></i></span></div>
-                <strong id="dashboard-units" class="dash-value">0</strong><span class="dash-muted">Stock registrado, incluidos vencidos</span>
-              </article>
-              <article class="dash-card">
-                <div class="dash-stat-top"><span>Lotes próximos a vencer</span><span class="dash-icon warning"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
-                <strong id="dashboard-soon" class="dash-value">0</strong><span class="dash-muted">Con stock · vencen entre hoy y 30 días</span>
-              </article>
-              <article class="dash-card">
-                <div class="dash-stat-top"><span>Lotes vencidos</span><span class="dash-icon danger"><i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i></span></div>
-                <strong id="dashboard-expired" class="dash-value">0</strong><span class="dash-muted">Lotes únicos que aún tienen stock</span>
-              </article>
+        </div>
+      </nav>
+
+      <!-- ========================================== -->
+      <!-- 2. CONTENIDO PRINCIPAL Y PANELES POR ROL   -->
+      <!-- ========================================== -->
+      <div class="container-fluid px-3 px-lg-4 py-4 flex-grow-1">
+
+        <!-- ==================================================================== -->
+        <!-- 2A. BANNER HERO CON IMAGEN LOCAL fondobanner-admin.png (ADMIN)       -->
+        <!-- ==================================================================== -->
+        <div class="admin-executive-banner hero-banner-local mb-4 solo-admin">
+          <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+              <div class="hero-status-row">
+                <div class="exec-badge-pill">
+                  <i class="fa-solid fa-shield-halved"></i>
+                  <span>Panel de Dirección &amp; Control Total WMS</span>
+                </div>
+                <span class="hero-status-pill status-active">
+                  <span class="wms-secure-dot"></span>
+                  <span>Sistema Activo</span>
+                </span>
+                <span class="hero-status-pill status-time">
+                  <i class="fa-regular fa-clock text-info"></i>
+                  <span id="hero-updated-time">Sincronizado en tiempo real</span>
+                </span>
+              </div>
+              <h3 class="mb-2 exec-title">Centro de Gobierno de Inventarios y Catálogo</h3>
+              <p class="exec-description mb-0">
+                Supervisión multi-almacén en tiempo real, auditoría de trazabilidad FEFO, administración del catálogo maestro y control de privilegios de usuarios.
+              </p>
             </div>
-            <div class="dash-grid">
-              <article class="dash-card">
-                <h3>Entradas y salidas recientes</h3>
-                <p class="dash-muted mb-0">Últimos 7 días · unidades por día · hora de Lima</p>
-                <div id="dashboard-flow-chart" class="dash-chart"></div>
-                <p id="dashboard-flow-summary" class="dash-muted dash-data-summary mb-2"></p>
-                <p class="dash-muted mb-0"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Máximo los últimos 100 registros globales de la API. Puede no incluir toda la actividad del período o almacén seleccionado.</p>
-              </article>
-              <article class="dash-card">
-                <h3>Distribución de stock por almacén</h3>
-                <p class="dash-muted mb-0">Unidades actuales · según el filtro seleccionado</p>
-                <div id="dashboard-stock-chart" class="dash-chart"></div>
-              </article>
+            <div class="col-lg-4 d-none d-lg-block">
+              <div class="hero-hud-widgets">
+                <div class="hero-hud-card">
+                  <i class="fa-solid fa-cubes-stacked"></i>
+                  <div>
+                    <div class="fw-bold small lh-1 text-white">Control Multi-Almacén</div>
+                    <small class="text-info" style="font-size: 0.7rem;">Monitoreo FEFO &amp; Lotes</small>
+                  </div>
+                </div>
+                <div class="hero-hud-card">
+                  <i class="fa-solid fa-chart-line"></i>
+                  <div>
+                    <div class="fw-bold small lh-1 text-white">Trazabilidad Kardex</div>
+                    <small class="text-info" style="font-size: 0.7rem;">Auditoría 100% Verificada</small>
+                  </div>
+                </div>
+              </div>
             </div>
-            <article class="dash-card mb-4">
-              <h3>Alertas de vencimiento</h3>
-              <p id="dashboard-alert-count" class="dash-muted mb-0"></p>
-              <div id="dashboard-alerts" class="dash-alert-list"></div>
-            </article>
-            <article class="dash-card">
-              <h3>Últimos movimientos</h3>
-              <p class="dash-muted mb-3">Hasta 10 operaciones de la selección, entre los últimos 100 registros globales.</p>
-              <div id="dashboard-movements"></div>
-            </article>
           </div>
-        </section>
-      </div>
+        </div>
+
+        <!-- ==================================================================== -->
+        <!-- 2B. CONTROLADORES DE PESTAÑAS OCULTOS (NAVEGACIÓN DESDE EL SIDEBAR)  -->
+        <!-- ==================================================================== -->
+        <div class="d-none" id="mainTabWrapper" aria-hidden="true">
+          <ul class="nav nav-tabs d-none" id="mainTab" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-dashboard-btn" data-bs-toggle="tab" data-bs-target="#tab-dashboard" type="button" role="tab" aria-controls="tab-dashboard" aria-selected="false">
+                <span>Dashboard</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active" id="tab-inv-btn" data-bs-toggle="tab" data-bs-target="#tab-inventario" type="button" role="tab">
+                <span>Inventario y Almacén</span>
+              </button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link" id="tab-hist-btn" data-bs-toggle="tab" data-bs-target="#tab-historial" type="button" role="tab" onclick="cargarHistorialMovimientos()">
+                <span>Historial de Movimientos</span>
+              </button>
+            </li>
+            <li class="nav-item solo-admin" role="presentation" id="nav-item-gestion-admin">
+              <button class="nav-link" id="tab-gest-btn" data-bs-toggle="tab" data-bs-target="#tab-gestion" type="button" role="tab">
+                <span>Gestión del Sistema</span>
+              </button>
+            </li>
+          </ul>
+        </div>
+
+        <!-- CONTENIDO DE LAS PESTAÑAS -->
+        <div class="tab-content bg-white p-3 border border-top-0 rounded-bottom shadow-sm" id="mainTabContent">
+          <div class="tab-pane fade" id="tab-dashboard" role="tabpanel" aria-labelledby="tab-dashboard-btn" tabindex="0">
+            <!-- VISTA DASHBOARD ADMINISTRADOR (INTACTA) -->
+            <section class="dashboard solo-admin" aria-label="Resumen de inventario y almacenes">
+              <div class="dash-header">
+                <div>
+                  <span class="dash-eyebrow">Vista general de operaciones</span>
+                  <h2>Dashboard de inventario</h2>
+                  <p class="dash-muted mb-1">Tus existencias, movimientos y prioridades en un solo lugar.</p>
+                  <div class="dash-muted" id="dashboard-updated">Los datos se cargarán al abrir esta pestaña.</div>
+                </div>
+                <div class="dash-controls">
+                  <div class="dash-select-wrap">
+                    <label for="dashboard-warehouse">Almacén</label>
+                    <select id="dashboard-warehouse" class="form-select form-select-sm"><option value="">Todos los almacenes</option></select>
+                  </div>
+                  <button type="button" id="dashboard-refresh" class="btn dash-refresh d-flex align-items-center gap-2"><i class="fa-solid fa-rotate" aria-hidden="true"></i> Actualizar</button>
+                </div>
+              </div>
+              <div id="dashboard-status" class="dash-status" role="status" aria-live="polite">Abre el dashboard para consultar los datos.</div>
+              <div id="dashboard-content" hidden aria-busy="false">
+                <div class="dash-stats">
+                  <article class="dash-card">
+                    <div class="dash-stat-top"><span>Productos con stock</span><span class="dash-icon"><i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i></span></div>
+                    <strong id="dashboard-products" class="dash-value">0</strong><span class="dash-muted">Productos distintos con existencias</span>
+                  </article>
+                  <article class="dash-card">
+                    <div class="dash-stat-top"><span>Unidades disponibles</span><span class="dash-icon"><i class="fa-solid fa-cubes" aria-hidden="true"></i></span></div>
+                    <strong id="dashboard-units" class="dash-value">0</strong><span class="dash-muted">Stock registrado, incluidos vencidos</span>
+                  </article>
+                  <article class="dash-card">
+                    <div class="dash-stat-top"><span>Lotes próximos a vencer</span><span class="dash-icon warning"><i class="fa-solid fa-hourglass-half" aria-hidden="true"></i></span></div>
+                    <strong id="dashboard-soon" class="dash-value">0</strong><span class="dash-muted">Con stock · vencen entre hoy y 30 días</span>
+                  </article>
+                  <article class="dash-card">
+                    <div class="dash-stat-top"><span>Lotes vencidos</span><span class="dash-icon danger"><i class="fa-solid fa-calendar-xmark" aria-hidden="true"></i></span></div>
+                    <strong id="dashboard-expired" class="dash-value">0</strong><span class="dash-muted">Lotes únicos que aún tienen stock</span>
+                  </article>
+                </div>
+                <div class="dash-grid">
+                  <article class="dash-card">
+                    <h3>Entradas y salidas recientes</h3>
+                    <p class="dash-muted mb-0">Últimos 7 días · unidades por día · hora de Lima</p>
+                    <div id="dashboard-flow-chart" class="dash-chart"></div>
+                    <p id="dashboard-flow-summary" class="dash-muted dash-data-summary mb-2"></p>
+                    <p class="dash-muted mb-0"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Máximo los últimos 100 registros globales de la API. Puede no incluir toda la actividad del período o almacén seleccionado.</p>
+                  </article>
+                  <article class="dash-card">
+                    <h3>Distribución de stock por almacén</h3>
+                    <p class="dash-muted mb-0">Unidades actuales · según el filtro seleccionado</p>
+                    <div id="dashboard-stock-chart" class="dash-chart"></div>
+                  </article>
+                </div>
+                <article class="dash-card mb-4">
+                  <h3>Alertas de vencimiento</h3>
+                  <p id="dashboard-alert-count" class="dash-muted mb-0"></p>
+                  <div id="dashboard-alerts" class="dash-alert-list"></div>
+                </article>
+                <article class="dash-card">
+                  <h3>Últimos movimientos</h3>
+                  <p class="dash-muted mb-3">Hasta 10 operaciones de la selección, entre los últimos 100 registros globales.</p>
+                  <div id="dashboard-movements"></div>
+                </article>
+              </div>
+            </section>
+
+            <!-- ==================================================================== -->
+            <!-- VISTA DASHBOARD OPERATIVO (EXCLUSIVO ROL OPERARIO)                   -->
+            <!-- ==================================================================== -->
+            <section class="operario-dashboard-view solo-operario" id="operario-dashboard-panel" aria-label="Dashboard Operativo">
+              
+              <!-- 1. BANNER SUPERIOR OPERATIVO CON fondobanner-opera.png -->
+              <div class="operario-hero-banner mb-4">
+                <div class="operario-hero-content">
+                  <span class="operario-welcome-badge" id="operario-welcome-badge">
+                    <i class="fa-solid fa-helmet-safety"></i>
+                    <span>Bienvenido, Operario</span>
+                  </span>
+                  <h2 class="operario-hero-title">Dashboard Operativo</h2>
+                  <p class="operario-hero-subtitle mb-0">
+                    Consulta y gestiona tus operaciones de inventario de forma rápida, segura y eficiente.
+                  </p>
+                </div>
+              </div>
+
+              <!-- 2. ACCIONES RÁPIDAS DEL OPERARIO (DOS TARJETAS HORIZONTALES PROMINENTES) -->
+              <div class="row g-3 mb-4">
+                <!-- Tarjeta Verde: Registrar Entrada de Lote -->
+                <div class="col-12 col-lg-6">
+                  <button type="button" id="btn-operario-entrada" class="op-action-banner-card op-action-green" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
+                    <div class="op-action-icon-wrap">
+                      <i class="fa-solid fa-box-open"></i>
+                      <span class="op-action-plus-badge"><i class="fa-solid fa-plus"></i></span>
+                    </div>
+                    <div class="op-action-text-wrap">
+                      <h4 class="op-action-title">Registrar Entrada de Lote</h4>
+                      <span class="op-action-desc">Recepción de mercancía y fecha de vencimiento</span>
+                    </div>
+                    <span class="op-action-chevron" aria-hidden="true">
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </span>
+                  </button>
+                </div>
+
+                <!-- Tarjeta Rojo/Coral: Registrar Salida / Despacho -->
+                <div class="col-12 col-lg-6">
+                  <button type="button" id="btn-operario-salida" class="op-action-banner-card op-action-red" data-bs-toggle="modal" data-bs-target="#modal-movimiento-lote">
+                    <div class="op-action-icon-wrap">
+                      <i class="fa-solid fa-truck-ramp-box"></i>
+                      <span class="op-action-minus-badge"><i class="fa-solid fa-arrow-right"></i></span>
+                    </div>
+                    <div class="op-action-text-wrap">
+                      <h4 class="op-action-title">Registrar Salida / Despacho</h4>
+                      <span class="op-action-desc">Respetando la regla FEFO</span>
+                    </div>
+                    <span class="op-action-chevron" aria-hidden="true">
+                      <i class="fa-solid fa-chevron-right"></i>
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- 3. RESUMEN DE INVENTARIO Y CONTADORES -->
+              <div class="operario-summary-block mb-4">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                  <h4 class="operario-section-title mb-0">Resumen de Inventario</h4>
+                  <div class="d-flex align-items-center gap-2 flex-nowrap">
+                    <select id="operario-filtro-almacen" class="form-select form-select-sm w-auto operario-warehouse-select">
+                      <option value="">Todos los Almacenes</option>
+                    </select>
+                    <button type="button" id="btn-operario-actualizar" class="btn btn-sm operario-btn-refresh d-inline-flex align-items-center gap-2 flex-shrink-0">
+                      <i class="fa-solid fa-rotate"></i>
+                      <span>Actualizar</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Cuatro Tarjetas de Métricas en Fila -->
+                <div class="operario-metrics-grid">
+                  <!-- Azul: Productos en Stock -->
+                  <article class="op-metric-card op-metric-blue">
+                    <div class="op-metric-icon">
+                      <i class="fa-solid fa-boxes-stacked"></i>
+                    </div>
+                    <div class="op-metric-info">
+                      <strong class="op-metric-number" id="op-metric-stock">0</strong>
+                      <span class="op-metric-label">Productos en Stock</span>
+                    </div>
+                  </article>
+
+                  <!-- Verde: Productos con FEFO Seguro -->
+                  <article class="op-metric-card op-metric-green">
+                    <div class="op-metric-icon">
+                      <i class="fa-solid fa-shield-heart"></i>
+                    </div>
+                    <div class="op-metric-info">
+                      <strong class="op-metric-number" id="op-metric-fefo-seguro">0</strong>
+                      <span class="op-metric-label">Productos con FEFO Seguro</span>
+                    </div>
+                  </article>
+
+                  <!-- Ámbar: Productos por Vencer (<= 30 días) -->
+                  <article class="op-metric-card op-metric-amber">
+                    <div class="op-metric-icon">
+                      <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div class="op-metric-info">
+                      <strong class="op-metric-number" id="op-metric-por-vencer">0</strong>
+                      <span class="op-metric-label">Productos por Vencer (&le; 30 días)</span>
+                    </div>
+                  </article>
+
+                  <!-- Rojo: Productos Vencidos -->
+                  <article class="op-metric-card op-metric-red">
+                    <div class="op-metric-icon">
+                      <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div class="op-metric-info">
+                      <strong class="op-metric-number" id="op-metric-vencidos">0</strong>
+                      <span class="op-metric-label">Productos Vencidos</span>
+                    </div>
+                  </article>
+                </div>
+              </div>
+
+              <!-- 4. HISTORIAL RECIENTE -->
+              <div class="operario-history-card">
+                <div class="operario-history-header d-flex align-items-center justify-content-between">
+                  <h4 class="operario-section-title mb-0">Historial Reciente</h4>
+                  <button type="button" class="btn btn-link text-decoration-none operario-ver-mas-link p-0" id="btn-operario-ver-mas">
+                    <span>Ver más</span>
+                    <i class="fa-solid fa-chevron-right ms-1" style="font-size: 0.75rem;"></i>
+                  </button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table align-middle mb-0 operario-recent-table" id="tabla-operario-reciente">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Operación</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Lote</th>
+                        <th class="text-center">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="tbody-operario-historial-reciente">
+                      <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">Cargando movimientos recientes...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </section>
+          </div>
       
       <!-- PESTAÑA 1: 📦 INVENTARIO Y ALMACENES -->
       <div class="tab-pane fade show active" id="tab-inventario" role="tabpanel">
         
-        <!-- Selector de Sedes / Almacenes estilo Segmented Control Flotante -->
-        <div class="almacenes-selector-wrap mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
-          <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 rounded-pill px-2.5 py-1.5">
-              <i class="fa-solid fa-building-circle-check me-1"></i> SEDE ACTIVA
-            </span>
-            <span class="small fw-semibold text-secondary">
-              Seleccione el almacén para consultar y operar sus lotes:
-            </span>
+        <!-- Tarjeta Inferior de Selección de Sedes / Almacenes -->
+        <div class="almacenes-selector-wrap wms-warehouse-selector-card mb-4">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div class="d-flex flex-wrap align-items-center gap-2.5">
+              <span class="wms-attention-badge">
+                <i class="fa-solid fa-circle-exclamation text-primary"></i>
+                <span>SEDE ACTIVA</span>
+              </span>
+              <span class="small fw-semibold text-secondary">
+                Seleccione el almacén para consultar y operar sus lotes:
+              </span>
+            </div>
+            <ul class="nav nav-pills gap-1.5 flex-nowrap overflow-auto m-0" id="pills-almacenes" role="tablist">
+              <li class="nav-item">
+                <span class="nav-link text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando sedes...</span>
+              </li>
+            </ul>
           </div>
-          <ul class="nav nav-pills gap-1.5 flex-nowrap overflow-auto m-0" id="pills-almacenes" role="tablist">
-            <li class="nav-item">
-              <span class="nav-link text-muted"><div class="spinner-border spinner-border-sm me-2"></div>Cargando sedes...</span>
-            </li>
-          </ul>
+          <div class="wms-selector-progress-bar">
+            <div class="d-flex align-items-center gap-2 small text-secondary fw-semibold" style="font-size: 0.74rem;">
+              <i class="fa-solid fa-circle-check text-success"></i>
+              <span>Estado de Red de Almacenes: Sincronización FEFO Activa</span>
+            </div>
+            <div class="wms-progress-track" aria-hidden="true">
+              <div class="wms-progress-fill"></div>
+            </div>
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill font-monospace" style="font-size: 0.68rem;">100% EN LÍNEA</span>
+          </div>
         </div>
 
         <!-- Vista Detallada del Almacén Activo -->
@@ -2230,42 +2410,45 @@
                 </div>
               </div>
 
-              <!-- Barra de Herramientas Unificada (Buscador + Selector FEFO + Actualizar) -->
-              <div class="inv-filter-toolbar d-flex flex-wrap align-items-center gap-2">
-                <!-- Buscador de stock -->
-                <div class="input-group input-group-sm inv-search-group">
+              <!-- Barra de Herramientas en Dos Filas: Buscador arriba + Filtro FEFO, Actualizar, Excel y PDF debajo -->
+              <div class="inv-filter-toolbar wms-stacked-toolbar">
+                <!-- Fila Superior: Buscador de stock -->
+                <div class="input-group input-group-sm inv-search-group w-100">
                   <span class="input-group-text">
                     <i class="fa-solid fa-magnifying-glass"></i>
                   </span>
                   <input type="text" id="filtro-buscar" class="form-control" placeholder="Buscar producto, SKU o lote...">
                 </div>
 
-                <!-- Filtro FEFO -->
-                <select id="filtro-fefo" class="form-select form-select-sm w-auto">
-                  <option value="">Todos los Estados FEFO</option>
-                  <option value="critico">⚠️ Próximos a Vencer (&le; 30 días)</option>
-                  <option value="proximo">⏳ Vencimiento Medio (31 - 90 días)</option>
-                  <option value="optimo">✅ Vencimiento Óptimo (&gt; 90 días)</option>
-                  <option value="vencido">🚫 Lotes Vencidos</option>
-                </select>
+                <!-- Fila Inferior: Todos los Estados FEFO, Actualizar, Excel y PDF -->
+                <div class="d-flex flex-wrap align-items-center justify-content-end gap-2 w-100">
+                  <!-- Filtro FEFO -->
+                  <select id="filtro-fefo" class="form-select form-select-sm w-auto">
+                    <option value="">Todos los Estados FEFO</option>
+                    <option value="critico">⚠️ Próximos a Vencer (&le; 30 días)</option>
+                    <option value="proximo">⏳ Vencimiento Medio (31 - 90 días)</option>
+                    <option value="optimo">✅ Vencimiento Óptimo (&gt; 90 días)</option>
+                    <option value="vencido">🚫 Lotes Vencidos</option>
+                  </select>
 
-                <!-- Botón de Actualizar -->
-                <button id="btn-recargar-stock" class="btn btn-sm d-flex align-items-center gap-1.5 fw-bold" title="Actualizar datos de inventario" data-tooltip="Sincronizar stock en tiempo real">
-                  <i class="fa-solid fa-rotate"></i>
-                  <span class="d-none d-sm-inline">Actualizar</span>
-                </button>
+                  <!-- Botón de Actualizar -->
+                  <button id="btn-recargar-stock" class="btn btn-sm d-flex align-items-center gap-1.5 fw-bold" title="Actualizar datos de inventario" data-tooltip="Sincronizar stock en tiempo real">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span>Actualizar</span>
+                  </button>
 
-                <!-- Botón de Exportar Excel -->
-                <button id="btn-exportar-inventario-excel" type="button" class="btn btn-sm btn-export-excel d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'excel', this)" title="Exportar inventario consolidado a Excel (.xlsx)" data-tooltip="Descargar reporte Excel (.xlsx)">
-                  <i class="fa-solid fa-file-excel"></i>
-                  <span class="d-none d-md-inline">Excel</span>
-                </button>
+                  <!-- Botón de Exportar Excel -->
+                  <button id="btn-exportar-inventario-excel" type="button" class="btn btn-sm btn-export-excel d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'excel', this)" title="Exportar inventario consolidado a Excel (.xlsx)" data-tooltip="Descargar reporte Excel (.xlsx)">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span>Excel</span>
+                  </button>
 
-                <!-- Botón de Exportar PDF -->
-                <button id="btn-exportar-inventario-pdf" type="button" class="btn btn-sm btn-export-pdf d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'pdf', this)" title="Generar vista PDF imprimible del inventario" data-tooltip="Generar reporte PDF">
-                  <i class="fa-solid fa-file-pdf"></i>
-                  <span class="d-none d-md-inline">PDF</span>
-                </button>
+                  <!-- Botón de Exportar PDF -->
+                  <button id="btn-exportar-inventario-pdf" type="button" class="btn btn-sm btn-export-pdf d-flex align-items-center gap-1.5" onclick="exportarReporteWMS('inventario', 'pdf', this)" title="Generar vista PDF imprimible del inventario" data-tooltip="Generar reporte PDF">
+                    <i class="fa-solid fa-file-pdf"></i>
+                    <span>PDF</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -2321,7 +2504,11 @@
       <!-- PESTAÑA 2: 📋 HISTORIAL DE MOVIMIENTOS -->
       <div class="tab-pane fade" id="tab-historial" role="tabpanel">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3 p-3 rounded-4 bg-light border">
-          <div class="d-flex align-items-center gap-3">
+          <div class="d-flex flex-wrap align-items-center gap-3">
+            <button type="button" id="btn-kardex-volver" class="btn btn-sm wms-btn-kardex-volver d-inline-flex align-items-center gap-1.5" title="Regresar a la vista anterior" data-tooltip="Regresar al Dashboard">
+              <i class="fa-solid fa-arrow-left"></i>
+              <span id="btn-kardex-volver-label">Volver al Dashboard</span>
+            </button>
             <div class="rounded-3 bg-info-subtle text-info p-2 d-flex align-items-center justify-content-center" style="width: 46px; height: 46px;">
               <i class="fa-solid fa-clock-rotate-left fs-5"></i>
             </div>
@@ -2505,6 +2692,8 @@
 
     </div>
   </div>
+    </div> <!-- /wms-main-workspace -->
+  </div> <!-- /wms-app-shell -->
 
   <!-- ========================================== -->
   <!-- 3. MODALES DE LA APLICACIÓN                -->
@@ -2823,5 +3012,130 @@
   <!-- Lógica de la Aplicación -->
   <script src="app.js"></script>
   <script src="dashboard.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sidebar = document.getElementById('wms-sidebar');
+      const backdrop = document.getElementById('wms-sidebar-backdrop');
+      const btnToggle = document.getElementById('btn-sidebar-toggle');
+      const sidebarLinks = document.querySelectorAll('#wms-sidebar [data-sidebar-nav]');
+
+      const closeSidebarMobile = () => {
+        sidebar?.classList.remove('show');
+        backdrop?.classList.remove('show');
+      };
+
+      btnToggle?.addEventListener('click', () => {
+        sidebar?.classList.toggle('show');
+        backdrop?.classList.toggle('show');
+      });
+
+      backdrop?.addEventListener('click', closeSidebarMobile);
+
+      // Sincronizar píldoras y enlaces del sidebar con las pestañas Bootstrap principales
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+          const targetSelector = link.getAttribute('data-sidebar-target');
+          if (targetSelector) {
+            const tabBtn = document.querySelector(targetSelector);
+            if (tabBtn && typeof bootstrap !== 'undefined') {
+              bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+              if (tabBtn.classList.contains('active')) {
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+              }
+            }
+            closeSidebarMobile();
+          }
+        });
+      });
+
+      // Botón Cerrar Sesión en el Sidebar
+      document.getElementById('btn-sidebar-logout')?.addEventListener('click', () => {
+        closeSidebarMobile();
+        document.getElementById('btn-logout')?.click();
+      });
+
+      // Sincronizar de pestañas principales hacia el sidebar
+      const tabToNavMap = {
+        'tab-dashboard-btn': 'dashboard',
+        'tab-inv-btn': 'inventario',
+        'tab-hist-btn': 'reportes',
+        'tab-gest-btn': 'configuracion'
+      };
+
+      document.querySelectorAll('#mainTab button[data-bs-toggle="tab"]').forEach(tabBtn => {
+        tabBtn.addEventListener('shown.bs.tab', (e) => {
+          const navKey = tabToNavMap[e.target.id];
+          if (navKey) {
+            sidebarLinks.forEach(l => {
+              l.classList.toggle('active', l.getAttribute('data-sidebar-nav') === navKey);
+            });
+          }
+        });
+      });
+
+      // Actualizar etiqueta de rol en topbar y hora en el banner hero
+      const rolActual = (localStorage.getItem('rol') || 'ADMIN').toUpperCase();
+      const topbarRoleLabel = document.getElementById('topbar-role-label');
+      if (topbarRoleLabel) {
+        topbarRoleLabel.textContent = rolActual === 'ADMIN' ? 'Administrador' : 'Operario';
+      }
+
+      const heroTime = document.getElementById('hero-updated-time');
+      if (heroTime) {
+        const now = new Date();
+        heroTime.textContent = 'Actualizado: ' + now.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      // Botón de Ayuda en Sidebar
+      document.getElementById('btn-sidebar-ayuda')?.addEventListener('click', () => {
+        closeSidebarMobile();
+        if (typeof Swal !== 'undefined') {
+          Swal.fire({
+            icon: 'info',
+            title: 'Centro de Ayuda WMS & FEFO',
+            html: '<div class="text-start small">' +
+              '<p class="mb-2"><strong>1. Control Multi-Almacén:</strong> Seleccione la sede activa para filtrar y operar sus existencias en tiempo real.</p>' +
+              '<p class="mb-2"><strong>2. Política FEFO:</strong> Priorice siempre el despacho de lotes en estado <em>Crítico (&le; 30 días)</em> o <em>Próximo (31-90 días)</em>.</p>' +
+              '<p class="mb-0"><strong>3. Trazabilidad y Reportes:</strong> Todas las entradas y salidas quedan auditadas en el Kardex con exportación directa a Excel y PDF.</p>' +
+              '</div>',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#1d4ed8'
+          });
+        }
+      });
+
+      // Acciones dentro del menú dropdown de Notificaciones en Topbar
+      document.getElementById('btn-topbar-notificaciones')?.addEventListener('click', () => {
+        if (typeof window.actualizarNotificacionesWMS === 'function') {
+          window.actualizarNotificacionesWMS();
+        }
+      });
+
+      document.getElementById('btn-notif-actualizar')?.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (typeof cargarDatosIniciales === 'function') {
+          await cargarDatosIniciales();
+        }
+      });
+
+      document.getElementById('btn-notif-ver-dashboard')?.addEventListener('click', () => {
+        const btnBell = document.getElementById('btn-topbar-notificaciones');
+        if (btnBell && typeof bootstrap !== 'undefined') {
+          bootstrap.Dropdown.getOrCreateInstance(btnBell).hide();
+        }
+        const tabDash = document.getElementById('tab-dashboard-btn');
+        if (tabDash && typeof bootstrap !== 'undefined') {
+          bootstrap.Tab.getOrCreateInstance(tabDash).show();
+        }
+        setTimeout(() => {
+          const targetEl = document.body.classList.contains('role-operario')
+            ? document.querySelector('.operario-summary-block')
+            : document.getElementById('dashboard-alerts');
+          targetEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 250);
+      });
+    });
+  </script>
 </body>
 </html>

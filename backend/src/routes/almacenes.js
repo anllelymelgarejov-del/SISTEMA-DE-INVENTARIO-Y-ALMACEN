@@ -16,9 +16,7 @@ router.get('/', verificarToken, async (req, res) => {
     const query = `
       SELECT 
         id_almacen, 
-        codigo,
         nombre, 
-        ubicacion,
         direccion 
       FROM almacenes 
       ORDER BY id_almacen ASC;
@@ -29,7 +27,7 @@ router.get('/', verificarToken, async (req, res) => {
     // Mapear filas agregando código amigable como fallback visual para el frontend
     const almacenes = resultado.rows.map(alm => ({
       ...alm,
-      codigo: alm.codigo || `ALM-${String(alm.id_almacen).padStart(2, '0')}`,
+      codigo: `ALM-${String(alm.id_almacen).padStart(2, '0')}`,
     }));
 
     return res.status(200).json({
@@ -60,9 +58,7 @@ router.get('/:id', verificarToken, async (req, res) => {
     const query = `
       SELECT 
         id_almacen, 
-        codigo,
         nombre, 
-        ubicacion,
         direccion 
       FROM almacenes 
       WHERE id_almacen = $1;
@@ -77,7 +73,7 @@ router.get('/:id', verificarToken, async (req, res) => {
     }
 
     const alm = resultado.rows[0];
-    alm.codigo = alm.codigo || `ALM-${String(alm.id_almacen).padStart(2, '0')}`;
+    alm.codigo = `ALM-${String(alm.id_almacen).padStart(2, '0')}`;
 
     return res.status(200).json({
       exito: true,

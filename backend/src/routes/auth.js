@@ -33,15 +33,14 @@ router.post('/login', async (req, res) => {
         nombre, 
         email, 
         password_hash, 
-        id_rol,
-        COALESCE(estado, TRUE) AS estado
+        id_rol 
       FROM usuarios 
       WHERE LOWER(email) = LOWER($1);
     `;
 
     const resultado = await pool.query(query, [String(email).trim()]);
 
-    // 3. Validar existencia y estado activo del usuario
+    // 3. Validar existencia del usuario
     if (resultado.rows.length === 0) {
       return res.status(401).json({
         exito: false,
@@ -51,14 +50,6 @@ router.post('/login', async (req, res) => {
     }
 
     const usuario = resultado.rows[0];
-
-    if (usuario.estado === false) {
-      return res.status(403).json({
-        exito: false,
-        success: false,
-        mensaje: 'Acceso denegado: La cuenta de usuario se encuentra inactiva.',
-      });
-    }
 
     // 4. Validación de contraseña (soporta tanto bcrypt hash como texto plano)
     const passAlmacenada = String(usuario.password_hash || '');

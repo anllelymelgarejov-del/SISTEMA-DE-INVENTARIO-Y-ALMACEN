@@ -110,19 +110,19 @@ JWT_EXPIRES_IN=24h
 > **Nota (local):** Para usar PostgreSQL local (pgAdmin), deja `DATABASE_URL` **comentada o sin definir** y llena `DB_USER`, `DB_HOST`, `DB_NAME`, `DB_PASSWORD` y `DB_PORT`. Si defines `DATABASE_URL`, el backend la usará a ella (con SSL) en lugar de la conexión local.
 
 ### 4. Configurar la Base de Datos PostgreSQL
-Primero crea la base de datos y luego ejecuta el esquema oficial `db/schema.sql`, que crea **todas las tablas y los datos semilla** (incluidos los usuarios de acceso):
+Primero crea la base de datos y luego ejecuta el esquema oficial `database/script_definitivo.sql`, que crea **todas las tablas y los datos semilla** (incluidos los usuarios de acceso):
 
 ```bash
 # 1) Crear la base de datos (si aún no existe)
 psql -U postgres -c "CREATE DATABASE sis_inv_almacen;"
 
 # 2) Ejecutar el esquema oficial (tablas + datos de prueba)
-psql -U postgres -d sis_inv_almacen -f db/schema.sql
+psql -U postgres -d sis_inv_almacen -f database/script_definitivo.sql
 ```
 
 El script es **idempotente**: puedes ejecutarlo las veces que quieras sin obtener errores.
 
-> **Nota:** `database.sql` quedó **obsoleto** (pertenecía al esquema antiguo). No lo uses: el esquema vigente es `db/schema.sql`.
+> **Nota:** `database.sql` quedó **obsoleto** (pertenecía al esquema antiguo). No lo uses: el esquema vigente es `database/script_definitivo.sql`.
 
 ### 🗄️ Alternativa desde pgAdmin
 
@@ -132,8 +132,8 @@ El script es **idempotente**: puedes ejecutarlo las veces que quieras sin obtene
    CREATE DATABASE sis_inv_almacen;
    ```
 3. Clic derecho sobre la base `sis_inv_almacen` > **Query Tool**.
-4. Abre el archivo `db/schema.sql` y presiona **F5** (Run) para crear todas las tablas y datos iniciales.
-5. Configura tus credenciales de conexión en tu archivo `.env` local.
+4. Abre el archivo `database/script_definitivo.sql` y presiona **F5** (Run) para crear todas las tablas y datos iniciales.
+5. Configura tus credenciales de conexión en tu archivo `backend/.env` local.
 
 
 ### 5. Iniciar el Servidor
@@ -159,9 +159,8 @@ http://localhost:3000
 
 | Rol | Correo Electrónico | Contraseña |
 | :--- | :--- | :--- |
-| **Administrador** | `admin@almacen.com` | `
-` |
-| **Operario** | `operario@almacen.com` | `Operario1234!` |
+| **Administrador** | `admin@almacen.com` | `admin123` |
+| **Operario** | `operario@almacen.com` | `admin123` |
 
 ---
 
@@ -169,35 +168,39 @@ http://localhost:3000
 
 ```text
 sistema-inventario/
-├── db/                      # Esquema OFICIAL de la base de datos
-│   └── schema.sql           # Tablas + datos semilla (idempotente)
-├── database/                # Scripts históricos / alternativos (no usados por el backend actual)
-│   ├── migracion_simplificada.sql
-│   ├── supabase_wms_completo.sql
-│   ├── validaciones_constraints_triggers.sql
-│   └── wms_schema.sql
-├── public/                  # Frontend estático servido por Express
-│   ├── app.js               # Controlador JS Vanilla, estado e interactividad
-│   ├── index.html           # Dashboard principal (Inventario, Historial, Gestión)
-│   └── login.html           # Vista de inicio de sesión estilizada y responsive
-├── src/                     # Código fuente del backend (Node.js + Express)
-│   ├── config/              # Configuración de conexiones (Pool de PostgreSQL)
-│   │   └── db.js
-│   ├── middlewares/         # Middlewares de seguridad y validación JWT
-│   │   └── auth.js
-│   ├── routes/              # Rutas modulares de la API REST
-│   │   ├── almacenes.js     # Endpoints de almacenes
-│   │   ├── auth.js          # Autenticación y login
-│   │   ├── inventario.js     # Stock, lotes y semáforo FEFO
-│   │   ├── movimientos.js    # Kardex y registro de entradas/salidas
-│   │   ├── productos.js      # Catálogo de productos
-│   │   ├── reportes.js       # Reportes y exportación
-│   │   └── usuarios.js       # Gestión de usuarios por el ADMIN
-│   └── index.js             # Punto de entrada principal y servidor Express
-├── .env.example             # Plantilla de variables de entorno
-├── .gitignore               # Exclusiones para el repositorio Git
-├── database.sql             # ⚠️ Obsoleto (usar db/schema.sql)
-├── package.json             # Manifiesto de dependencias y scripts de npm
+├── backend/                 # Servidor Backend (Node.js + Express 5 + PostgreSQL)
+│   ├── src/
+│   │   ├── config/
+│   │   │   └── db.js        # Pool de conexiones PostgreSQL (Local y Cloud SSL)
+│   │   ├── middlewares/
+│   │   │   ├── auth.js      # Autenticación JWT y control RBAC (verificarToken, verificarRol)
+│   │   │   └── validaciones.js
+│   │   ├── routes/
+│   │   │   ├── almacenes.js # Endpoints de sedes y almacenes
+│   │   │   ├── auditoria.js # Bitácora forense inmutable (logs_auditoria)
+│   │   │   ├── auth.js      # Login JWT y perfil
+│   │   │   ├── inventario.js# Stock por lote, semáforo FEFO y alertas de stock mínimo
+│   │   │   ├── movimientos.js # Kardex transaccional ACID y bloqueo FEFO
+│   │   │   ├── productos.js # Catálogo maestro de productos
+│   │   │   ├── reportes.js  # Exportación Excel (.xlsx) con ExcelJS
+│   │   │   ├── usuarios.js  # Gestión y baja selectiva segura de usuarios (ADMIN)
+│   │   │   └── wms.js
+│   │   └── index.js         # Punto de entrada principal Express
+│   ├── .env.example         # Plantilla de variables de entorno
+│   └── package.json
+├── database/
+│   └── script_definitivo.sql# Esquema oficial PostgreSQL + datos semilla
+├── frontend/                # Interfaz Web (HTML5, CSS3, Bootstrap 5.3, JS Vanilla)
+│   ├── app.js               # Controlador principal, modales, FEFO, Kardex y notificaciones
+│   ├── dashboard.css        # Estilos corporativos SIA, vistas Admin y Operario
+│   ├── dashboard.js         # Métricas y gráficos analíticos del Dashboard
+│   ├── fondobanner-admin.png# Banner local de la Suite Ejecutiva (Administrador)
+│   ├── fondobanner-opera.png# Banner local del Dashboard Operativo (Operario)
+│   ├── index.html           # Panel principal SIA multi-rol
+│   └── login.html           # Acceso corporativo con JWT
+├── .gitignore               # Exclusiones de Git (node_modules, .env, logs)
+├── database.sql             # ⚠️ Obsoleto (usar database/script_definitivo.sql)
+├── package.json             # Scripts raíz (npm run dev / npm start)
 └── README.md                # Documentación oficial del proyecto
 ```
 

@@ -176,7 +176,7 @@ const validarCapacidadUbicacion = async (req, res, next) => {
   try {
     // 1. Verificar existencia del almacén en el esquema vigente
     const queryUbicacion = `
-      SELECT id_almacen AS id_ubicacion, codigo AS codigo_ubicacion, nombre
+      SELECT id_almacen AS id_ubicacion, nombre, direccion
       FROM almacenes
       WHERE id_almacen = $1;
     `;

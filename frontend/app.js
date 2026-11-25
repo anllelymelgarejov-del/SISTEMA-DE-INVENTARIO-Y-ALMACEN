@@ -22,6 +22,7 @@ const estadoApp = {
   movimientos: [],
   logsAuditoria: [],
   idAlmacenActivo: null,
+  vistaOrigenHistorial: '#tab-dashboard-btn',
 };
 
 // ============================================================================
@@ -148,12 +149,32 @@ function renderizarSegunRol() {
   const elementosAdmin = document.querySelectorAll('.solo-admin');
   const elementosOperario = document.querySelectorAll('.solo-operario');
 
+  document.body.classList.toggle('role-operario', rol === 'OPERARIO');
+  document.body.classList.toggle('role-admin', rol === 'ADMIN');
+
+  const topbarRoleLabel = document.getElementById('topbar-role-label');
+  if (topbarRoleLabel) {
+    topbarRoleLabel.textContent = rol === 'ADMIN' ? 'Administrador' : 'Operario';
+  }
+
+  const welcomeBadge = document.getElementById('operario-welcome-badge');
+  if (welcomeBadge) {
+    const nombreOp = estadoApp.usuario?.nombre || 'Operario';
+    welcomeBadge.innerHTML = `<i class="fa-solid fa-helmet-safety"></i><span>Bienvenido, ${escaparHtml(nombreOp)}</span>`;
+  }
+
   if (rol === 'OPERARIO') {
     elementosAdmin.forEach(el => el.classList.add('d-none'));
     elementosOperario.forEach(el => el.classList.remove('d-none'));
 
-    const tabInvBtn = document.getElementById('tab-inv-btn');
-    if (tabInvBtn) bootstrap.Tab.getOrCreateInstance(tabInvBtn).show();
+    const tabDashBtn = document.getElementById('tab-dashboard-btn');
+    if (tabDashBtn && typeof bootstrap !== 'undefined') {
+      bootstrap.Tab.getOrCreateInstance(tabDashBtn).show();
+    }
+    document.querySelectorAll('#wms-sidebar [data-sidebar-nav]').forEach(l => {
+      l.classList.toggle('active', l.getAttribute('data-sidebar-nav') === 'dashboard');
+    });
+    cargarHistorialMovimientos();
   } else if (rol === 'ADMIN') {
     elementosAdmin.forEach(el => el.classList.remove('d-none'));
     elementosOperario.forEach(el => el.classList.add('d-none'));
@@ -207,10 +228,266 @@ async function cargarDatosIniciales() {
     renderizarPillsAlmacenes();
     renderizarTablaAlmacenActivo();
     poblarSelectoresModalMovimiento();
+    actualizarNotificacionesWMS();
+    renderizarDashboardOperario();
   } catch (error) {
     console.error('Error al cargar datos iniciales:', error);
   }
 }
+
+/**
+ * Renderiza el Resumen de Inventario (4 contadores) y la tabla de Historial Reciente
+ * exclusivos de la vista Dashboard Operativo del rol OPERARIO.
+ */
+function renderizarDashboardOperario() {
+  const selectAlm = document.getElementById('operario-filtro-almacen');
+  const elStock = document.getElementById('op-metric-stock');
+  const elFefoSeguro = document.getElementById('op-metric-fefo-seguro');
+  const elPorVencer = document.getElementById('op-metric-por-vencer');
+  const elVencidos = document.getElementById('op-metric-vencidos');
+  const tbodyReciente = document.getElementById('tbody-operario-historial-reciente');
+
+  if (selectAlm && estadoApp.almacenes.length > 0) {
+    const valorActual = selectAlm.value;
+    const opcionesHtml = '<option value="">Todos los Almacenes</option>' +
+      estadoApp.almacenes.map(a => `<option value="${a.id_almacen}">${escaparHtml(a.nombre)}</option>`).join('');
+    if (selectAlm.innerHTML !== opcionesHtml) {
+      selectAlm.innerHTML = opcionesHtml;
+      if (estadoApp.almacenes.some(a => String(a.id_almacen) === String(valorActual))) {
+        selectAlm.value = valorActual;
+      }
+    }
+  }
+
+  const idAlmacenFiltro = selectAlm?.value ? parseInt(selectAlm.value, 10) : null;
+  const almacenObj = idAlmacenFiltro ? estadoApp.almacenes.find(a => a.id_almacen === idAlmacenFiltro) : null;
+
+  const itemsActivos = (estadoApp.inventario || []).filter(item => {
+    const cant = Number(item.cantidad) || 0;
+    if (cant <= 0) return false;
+    if (idAlmacenFiltro && Number(item.id_almacen) !== idAlmacenFiltro) return false;
+    return true;
+  });
+
+  let totalEnStock = 0;
+  let totalFefoSeguro = 0;
+  let totalPorVencer = 0;
+  let totalVencidos = 0;
+
+  itemsActivos.forEach(item => {
+    totalEnStock += 1;
+    const dias = calcularDiasParaVencer(item.fecha_vencimiento, item.dias_para_vencer);
+    if (dias < 0) {
+      totalVencidos += 1;
+    } else if (dias <= 30) {
+      totalPorVencer += 1;
+    } else {
+      totalFefoSeguro += 1;
+    }
+  });
+
+  if (elStock) elStock.textContent = String(totalEnStock);
+  if (elFefoSeguro) elFefoSeguro.textContent = String(totalFefoSeguro);
+  if (elPorVencer) elPorVencer.textContent = String(totalPorVencer);
+  if (elVencidos) elVencidos.textContent = String(totalVencidos);
+
+  if (!tbodyReciente) return;
+
+  const movimientosFiltrados = (estadoApp.movimientos || []).filter(m => {
+    if (!idAlmacenFiltro) return true;
+    if (m.id_almacen && Number(m.id_almacen) === idAlmacenFiltro) return true;
+    if (almacenObj && m.almacen === almacenObj.nombre) return true;
+    return false;
+  }).slice(0, 8);
+
+  if (movimientosFiltrados.length === 0) {
+    tbodyReciente.innerHTML = `
+      <tr>
+        <td colspan="6" class="text-center py-4 text-muted">
+          No hay movimientos recientes registrados para esta selección.
+        </td>
+      </tr>
+    `;
+    return;
+  }
+
+  tbodyReciente.innerHTML = movimientosFiltrados.map(m => {
+    const fechaFmt = formatearFechaHoraAuditoria(m.fecha);
+    const esEntrada = String(m.tipo || 'ENTRADA').toUpperCase() === 'ENTRADA';
+    const badgeOperacion = esEntrada
+      ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold"><i class="fa-solid fa-arrow-down me-1"></i>Entrada</span>'
+      : '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2.5 py-1 fw-bold"><i class="fa-solid fa-arrow-up me-1"></i>Salida</span>';
+
+    const badgeEstado = '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 fw-semibold"><i class="fa-solid fa-circle-check me-1"></i>Completado</span>';
+
+    return `
+      <tr>
+        <td class="font-monospace small text-secondary fw-semibold">${escaparHtml(fechaFmt)}</td>
+        <td>${badgeOperacion}</td>
+        <td class="fw-bold text-dark">${escaparHtml(m.producto || 'N/A')}</td>
+        <td class="fw-bold ${esEntrada ? 'text-success' : 'text-danger'}">${esEntrada ? '+' : '-'}${m.cantidad} uds</td>
+        <td><span class="badge bg-light text-dark border font-monospace">${escaparHtml(m.numero_lote || 'N/A')}</span></td>
+        <td class="text-center">${badgeEstado}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+window.renderizarDashboardOperario = renderizarDashboardOperario;
+
+/**
+ * Calcula y renderiza las alertas activas del sistema en el menú dropdown de la campanita
+ * (lotes vencidos, lotes próximos a vencer <= 30 días por regla FEFO y alertas de stock mínimo).
+ */
+function actualizarNotificacionesWMS(inventarioOverride = null) {
+  const listaEl = document.getElementById('lista-notificaciones-wms');
+  const badgeCountEl = document.getElementById('topbar-notif-count');
+  const badgeTotalDropdownEl = document.getElementById('notif-dropdown-badge-total');
+
+  const inventario = Array.isArray(inventarioOverride) ? inventarioOverride : (estadoApp.inventario || []);
+  const alertas = [];
+
+  inventario.forEach(item => {
+    const stockActual = Number(item.cantidad) || 0;
+    if (stockActual <= 0) return;
+
+    const dias = calcularDiasParaVencer(item.fecha_vencimiento, item.dias_para_vencer);
+    const stockMinimo = Number(item.stock_minimo ?? 10);
+    const esVencido = dias < 0;
+    const esCriticoFefo = dias >= 0 && dias <= 30;
+    const esStockBajo = Boolean(item.alerta_stock) || stockActual <= stockMinimo;
+
+    if (!esVencido && !esCriticoFefo && !esStockBajo) return;
+
+    alertas.push({
+      item,
+      dias,
+      stockActual,
+      stockMinimo,
+      esVencido,
+      esCriticoFefo,
+      esStockBajo,
+      prioridad: esVencido ? 1 : (esCriticoFefo ? 2 : 3),
+    });
+  });
+
+  alertas.sort((a, b) => a.prioridad - b.prioridad || a.dias - b.dias);
+
+  if (badgeCountEl) {
+    badgeCountEl.textContent = String(alertas.length);
+    badgeCountEl.classList.toggle('d-none', alertas.length === 0);
+  }
+
+  if (badgeTotalDropdownEl) {
+    badgeTotalDropdownEl.textContent = `${alertas.length} ${alertas.length === 1 ? 'alerta' : 'alertas'}`;
+    badgeTotalDropdownEl.className = `badge rounded-pill ${alertas.length > 0 ? 'bg-danger' : 'bg-success'}`;
+  }
+
+  if (!listaEl) return;
+
+  if (alertas.length === 0) {
+    listaEl.innerHTML = `
+      <div class="text-center py-4 px-3 text-muted small">
+        <i class="fa-solid fa-circle-check text-success fs-3 d-block mb-2"></i>
+        <strong class="text-dark d-block">Sin alertas pendientes</strong>
+        <span>Todos los lotes cumplen la vigencia FEFO y superan el stock mínimo.</span>
+      </div>
+    `;
+    return;
+  }
+
+  listaEl.innerHTML = alertas.map(({ item, dias, stockActual, stockMinimo, esVencido, esCriticoFefo, esStockBajo }) => {
+    const nombreProd = item.nombre_producto || item.producto || item.producto_nombre || 'Producto';
+    const nombreAlm = item.nombre_almacen || item.almacen || 'Almacén';
+    const loteStr = item.numero_lote || 'N/A';
+    const fechaVenc = item.fecha_vencimiento ? String(item.fecha_vencimiento).substring(0, 10) : 'N/A';
+
+    const iconClass = esVencido ? 'notif-vencido' : (esCriticoFefo ? 'notif-critico' : 'notif-stock');
+    const iconHtml = esVencido
+      ? '<i class="fa-solid fa-ban"></i>'
+      : (esCriticoFefo ? '<i class="fa-solid fa-hourglass-half"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>');
+
+    const tags = [];
+    if (esVencido) {
+      tags.push(`<span class="badge badge-fefo-vencido rounded-pill" style="font-size:0.68rem;">Vencido (${dias} días)</span>`);
+    } else if (esCriticoFefo) {
+      tags.push(`<span class="badge badge-fefo-critico rounded-pill" style="font-size:0.68rem;">FEFO Crítico (${dias === 0 ? 'Vence hoy' : dias + ' días'})</span>`);
+    }
+    if (esStockBajo) {
+      tags.push(`<span class="badge badge-stock-minimo rounded-pill" style="font-size:0.68rem;">Stock Mínimo (${stockActual}/${stockMinimo} uds)</span>`);
+    }
+
+    return `
+      <div class="wms-notif-item">
+        <div class="wms-notif-icon ${iconClass}">
+          ${iconHtml}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="d-flex align-items-center justify-content-between gap-2">
+            <strong class="text-dark small text-truncate">${escaparHtml(nombreProd)}</strong>
+            <span class="badge bg-light text-secondary border font-monospace" style="font-size:0.68rem;">${escaparHtml(loteStr)}</span>
+          </div>
+          <div class="text-muted" style="font-size: 0.74rem;">
+            <i class="fa-solid fa-warehouse me-1 text-primary"></i>${escaparHtml(nombreAlm)} · <strong>${stockActual} uds</strong> · Vence: ${escaparHtml(fechaVenc)}
+          </div>
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-1 mt-1.5">
+            <div class="d-flex flex-wrap gap-1">${tags.join('')}</div>
+            <div class="d-flex align-items-center gap-1">
+              <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2 rounded-2 btn-notif-detalle"
+                      style="font-size: 0.7rem; min-height: 24px;"
+                      data-producto="${escaparHtml(nombreProd)}"
+                      data-codigo="${escaparHtml(item.codigo_barras || 'N/A')}"
+                      data-lote="${escaparHtml(loteStr)}"
+                      data-vencimiento="${escaparHtml(fechaVenc)}"
+                      data-cantidad="${stockActual}"
+                      data-almacen="${escaparHtml(nombreAlm)}">
+                Detalle
+              </button>
+              <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 rounded-2 btn-notif-operar"
+                      style="font-size: 0.7rem; min-height: 24px;"
+                      data-id-almacen="${item.id_almacen}"
+                      data-id-producto="${item.id_producto}"
+                      data-lote="${escaparHtml(loteStr)}">
+                Operar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listaEl.querySelectorAll('.btn-notif-detalle').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      verDetallesLote({
+        producto: btn.dataset.producto,
+        codigo: btn.dataset.codigo,
+        lote: btn.dataset.lote,
+        vencimiento: btn.dataset.vencimiento,
+        cantidad: btn.dataset.cantidad,
+        almacen: btn.dataset.almacen,
+      });
+    });
+  });
+
+  listaEl.querySelectorAll('.btn-notif-operar').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const bellBtn = document.getElementById('btn-topbar-notificaciones');
+      if (bellBtn && typeof bootstrap !== 'undefined') {
+        bootstrap.Dropdown.getOrCreateInstance(bellBtn).hide();
+      }
+      abrirModalMovimientoPreseleccionado({
+        idAlmacen: btn.dataset.idAlmacen,
+        idProducto: btn.dataset.idProducto,
+        numeroLote: btn.dataset.lote,
+      });
+    });
+  });
+}
+
+window.actualizarNotificacionesWMS = actualizarNotificacionesWMS;
 
 function renderizarPillsAlmacenes() {
   const contenedorPills = document.getElementById('pills-almacenes');
@@ -473,10 +750,12 @@ async function cargarHistorialMovimientos() {
 
     if (!movimientos || movimientos.length === 0) {
       tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No hay movimientos registrados.</td></tr>';
+      renderizarDashboardOperario();
       return;
     }
 
     renderizarTablaHistorialFiltrada();
+    renderizarDashboardOperario();
   } catch (error) {
     console.error('Error en historial:', error);
     tbody.innerHTML = `<tr><td colspan="8" class="text-center text-danger py-4"><i class="fa-solid fa-circle-exclamation me-1"></i>Error al cargar historial: ${escaparHtml(error.message)}</td></tr>`;
@@ -1029,6 +1308,7 @@ function actualizarEtiquetaProveedorSegunTipo() {
   const esSalida = document.getElementById('tipo-salida')?.checked;
   const labelProv = document.getElementById('label-proveedor-origen');
   const inputProv = document.getElementById('mov-proveedor');
+  const inputFecha = document.getElementById('mov-fecha-vencimiento');
 
   if (labelProv && inputProv) {
     if (esSalida) {
@@ -1039,16 +1319,34 @@ function actualizarEtiquetaProveedorSegunTipo() {
       inputProv.placeholder = 'Seleccione o escriba el proveedor u origen (Opcional)...';
     }
   }
+
+  if (inputFecha) {
+    inputFecha.disabled = Boolean(esSalida);
+    if (esSalida) inputFecha.value = '';
+  }
 }
 
 function abrirModalMovimientoPreseleccionado({ idAlmacen, idProducto, numeroLote }) {
+  const formMov = document.getElementById('form-movimiento-lote');
+  if (formMov) formMov.reset();
+
   const selAlm = document.getElementById('mov-id-almacen');
   const selProd = document.getElementById('mov-id-producto');
   const inputLote = document.getElementById('mov-numero-lote');
+  const inputFecha = document.getElementById('mov-fecha-vencimiento');
 
   if (selAlm && idAlmacen) selAlm.value = idAlmacen;
   if (selProd && idProducto) selProd.value = idProducto;
   if (inputLote && numeroLote) inputLote.value = numeroLote;
+
+  if (inputFecha && idProducto && numeroLote) {
+    const loteInfo = (estadoApp.inventario || []).find(
+      i => String(i.id_producto) === String(idProducto) && String(i.numero_lote) === String(numeroLote)
+    );
+    if (loteInfo?.fecha_vencimiento) {
+      inputFecha.value = String(loteInfo.fecha_vencimiento).substring(0, 10);
+    }
+  }
 
   actualizarEtiquetaProveedorSegunTipo();
 
@@ -1108,7 +1406,10 @@ function configurarFormularios() {
         actualizarEtiquetaProveedorSegunTipo();
         bootstrap.Modal.getInstance(document.getElementById('modal-movimiento-lote'))?.hide();
         await cargarDatosIniciales();
-        cargarHistorialMovimientos();
+        await cargarHistorialMovimientos();
+        if (document.getElementById('tab-dashboard-btn')?.classList.contains('active')) {
+          document.getElementById('dashboard-refresh')?.click();
+        }
       } catch (err) {
         Swal.fire({ icon: 'error', title: 'Error en la Operación', text: err.message });
       }
@@ -1180,32 +1481,61 @@ function configurarFormularios() {
 // 8. PROTECCIÓN DE CLIENTE Y EVENTOS
 // ============================================================================
 function configurarEventosYProteccion() {
-  // Conectar botones rápidos de operario
+  const prepararModalMovimiento = (tipoOperacion = 'ENTRADA') => {
+    const formMov = document.getElementById('form-movimiento-lote');
+    if (formMov) formMov.reset();
+    const selAlm = document.getElementById('mov-id-almacen');
+    if (selAlm && estadoApp.idAlmacenActivo) {
+      selAlm.value = String(estadoApp.idAlmacenActivo);
+    }
+    const radio = document.getElementById(tipoOperacion === 'SALIDA' ? 'tipo-salida' : 'tipo-entrada');
+    if (radio) radio.checked = true;
+    actualizarEtiquetaProveedorSegunTipo();
+  };
+
+  const btnMovNav = document.getElementById('btn-movimiento-nav');
+  if (btnMovNav) {
+    btnMovNav.addEventListener('click', () => prepararModalMovimiento('ENTRADA'));
+  }
+
+  // Conectar botones rápidos de operario (el modal se abre vía data-bs-toggle="modal")
   const btnEntrada = document.getElementById('btn-operario-entrada');
   if (btnEntrada) {
-    btnEntrada.addEventListener('click', () => {
-      const radio = document.getElementById('tipo-entrada');
-      if (radio) radio.checked = true;
-      actualizarEtiquetaProveedorSegunTipo();
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-movimiento-lote'))?.show();
-    });
+    btnEntrada.addEventListener('click', () => prepararModalMovimiento('ENTRADA'));
   }
 
   const btnSalida = document.getElementById('btn-operario-salida');
   if (btnSalida) {
-    btnSalida.addEventListener('click', () => {
-      const radio = document.getElementById('tipo-salida');
-      if (radio) radio.checked = true;
-      actualizarEtiquetaProveedorSegunTipo();
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('modal-movimiento-lote'))?.show();
-    });
+    btnSalida.addEventListener('click', () => prepararModalMovimiento('SALIDA'));
   }
 
-  // Evento de pestañas Bootstrap
+  // Evento de pestañas Bootstrap y registro de vista de origen para el botón Volver en Kardex
+  const etiquetasOrigen = {
+    '#tab-dashboard-btn': 'Volver al Dashboard',
+    '#tab-inv-btn': 'Volver a Inventario',
+    '#tab-gest-btn': 'Volver a Gestión',
+  };
+
+  const actualizarEtiquetaBotonVolverKardex = () => {
+    const labelVolver = document.getElementById('btn-kardex-volver-label');
+    if (labelVolver) {
+      const origen = estadoApp.vistaOrigenHistorial || '#tab-dashboard-btn';
+      labelVolver.textContent = etiquetasOrigen[origen] || 'Volver al Dashboard';
+    }
+  };
+
   document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(btn => {
+    btn.addEventListener('hide.bs.tab', (e) => {
+      if (e.target?.id && e.target.id !== 'tab-hist-btn') {
+        estadoApp.vistaOrigenHistorial = `#${e.target.id}`;
+        actualizarEtiquetaBotonVolverKardex();
+      }
+    });
+
     btn.addEventListener('shown.bs.tab', (e) => {
       const target = e.target.getAttribute('data-bs-target');
       if (target === '#tab-historial') {
+        actualizarEtiquetaBotonVolverKardex();
         cargarHistorialMovimientos();
       } else if (target === '#tab-gestion') {
         cargarUsuarios();
@@ -1242,6 +1572,49 @@ function configurarEventosYProteccion() {
   if (btnRecargarStock) {
     btnRecargarStock.addEventListener('click', () => {
       cargarDatosIniciales();
+    });
+  }
+
+  // Controles exclusivos del Dashboard Operativo (OPERARIO)
+  const selOpAlmacen = document.getElementById('operario-filtro-almacen');
+  if (selOpAlmacen) {
+    selOpAlmacen.addEventListener('change', () => {
+      renderizarDashboardOperario();
+    });
+  }
+
+  const btnOpActualizar = document.getElementById('btn-operario-actualizar');
+  if (btnOpActualizar) {
+    btnOpActualizar.addEventListener('click', async () => {
+      await cargarDatosIniciales();
+      await cargarHistorialMovimientos();
+    });
+  }
+
+  const btnOpVerMas = document.getElementById('btn-operario-ver-mas');
+  if (btnOpVerMas) {
+    btnOpVerMas.addEventListener('click', () => {
+      estadoApp.vistaOrigenHistorial = '#tab-dashboard-btn';
+      const labelVolver = document.getElementById('btn-kardex-volver-label');
+      if (labelVolver) labelVolver.textContent = 'Volver al Dashboard';
+
+      const tabHist = document.getElementById('tab-hist-btn');
+      if (tabHist && typeof bootstrap !== 'undefined') {
+        bootstrap.Tab.getOrCreateInstance(tabHist).show();
+      }
+      cargarHistorialMovimientos();
+    });
+  }
+
+  // Botón de regreso en Historial Auditado de Movimientos (Kardex)
+  const btnKardexVolver = document.getElementById('btn-kardex-volver');
+  if (btnKardexVolver) {
+    btnKardexVolver.addEventListener('click', () => {
+      const selectorOrigen = estadoApp.vistaOrigenHistorial || '#tab-dashboard-btn';
+      const tabOrigen = document.querySelector(selectorOrigen) || document.getElementById('tab-dashboard-btn');
+      if (tabOrigen && typeof bootstrap !== 'undefined') {
+        bootstrap.Tab.getOrCreateInstance(tabOrigen).show();
+      }
     });
   }
 

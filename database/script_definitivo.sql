@@ -132,12 +132,13 @@ VALUES (
     1,
     'Administrador', 
     'admin@almacen.com', 
-    '$2b$10$39WlB3u6f709V2R0NfW/U.L4m4hYw8oH0L3K3b9Uv4O3c6W5G3XvO', 
+    '$2b$10$MyCXjjZdUJOZU7sg4se7FODlP/HA2FLwtln3gzBNQSOUAkZvXvoMe', 
     1, 
     TRUE
 )
 ON CONFLICT (email) DO UPDATE SET 
     nombre = EXCLUDED.nombre,
+    password_hash = EXCLUDED.password_hash,
     id_rol = 1;
 
 -- Usuario Operario Oficial
@@ -147,12 +148,13 @@ VALUES (
     2,
     'Operario', 
     'operario@almacen.com', 
-    '$2b$10$39WlB3u6f709V2R0NfW/U.L4m4hYw8oH0L3K3b9Uv4O3c6W5G3XvO', 
+    '$2b$10$MyCXjjZdUJOZU7sg4se7FODlP/HA2FLwtln3gzBNQSOUAkZvXvoMe', 
     2, 
     TRUE
 )
 ON CONFLICT (email) DO UPDATE SET 
     nombre = EXCLUDED.nombre,
+    password_hash = EXCLUDED.password_hash,
     id_rol = 2;
 
 -- Sincronizar secuencia de autoincremento para id_usuario

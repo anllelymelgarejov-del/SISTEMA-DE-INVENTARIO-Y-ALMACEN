@@ -95,6 +95,9 @@
       if (data.warehouses.some(item => String(item.id_almacen) === selected)) $('dashboard-warehouse').value = selected;
       state.data = data;
       render();
+      if (typeof window.actualizarNotificacionesWMS === 'function') {
+        window.actualizarNotificacionesWMS(data.inventory);
+      }
       $('dashboard-content').hidden = false;
       $('dashboard-updated').textContent = `Actualizado: ${dateLabel(new Date())}`;
       status.hidden = true;
@@ -114,6 +117,8 @@
     $('dashboard-refresh').addEventListener('click', load);
     $('dashboard-warehouse').addEventListener('change', render);
     $('tab-dashboard-btn').addEventListener('shown.bs.tab', load);
-    // Se carga al entrar en la pestaña para no duplicar las consultas iniciales del inventario.
+    if ($('tab-dashboard-btn')?.classList.contains('active')) {
+      load();
+    }
   });
 })();
