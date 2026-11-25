@@ -183,7 +183,7 @@ const registrarMovimiento = async (req, res) => {
     // 3. Buscar o registrar lote
     let loteId;
     const loteExistente = await client.query(
-      'SELECT id_lote, fecha_vencimiento FROM lotes WHERE id_producto = $1 AND numero_lote = $2',
+      'SELECT id_lote, fecha_vencimiento, (fecha_vencimiento < CURRENT_DATE) AS vencido FROM lotes WHERE id_producto = $1 AND numero_lote = $2',
       [prodId, loteLimpio]
     );
 
@@ -243,20 +243,12 @@ const registrarMovimiento = async (req, res) => {
       }
       loteId = loteExistente.rows[0].id_lote;
 
-      // Validar vigencia FEFO del lote antes de descontar stock
-      const loteVencRes = await client.query(
-        "SELECT TO_CHAR(fecha_vencimiento, 'YYYY-MM-DD') AS fecha_vencimiento, (fecha_vencimiento < CURRENT_DATE) AS vencido FROM lotes WHERE id_lote = $1",
-        [loteId]
-      );
-
-      const registroLote = loteVencRes.rows[0];
-
-      if (registroLote?.vencido) {
+      if (loteExistente.rows[0].vencido) {
         await client.query('ROLLBACK');
         return res.status(400).json({
           exito: false,
           success: false,
-          mensaje: 'Operación denegada: El lote seleccionado se encuentra vencido y no cumple con la política FEFO',
+          mensaje: `No se puede despachar el lote ${loteLimpio}: está vencido.`,
         });
       }
 

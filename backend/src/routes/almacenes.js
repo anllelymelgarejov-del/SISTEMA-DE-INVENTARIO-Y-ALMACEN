@@ -14,14 +14,14 @@ const { verificarToken, verificarRol } = require('../middlewares/auth');
 router.get('/', verificarToken, async (req, res) => {
   try {
     const query = `
-      SELECT 
-        id_almacen, 
-        codigo,
-        nombre, 
-        ubicacion,
-        direccion 
-      FROM almacenes 
-      ORDER BY id_almacen ASC;
+      SELECT
+        a.id_almacen,
+        to_jsonb(a)->>'codigo' AS codigo,
+        a.nombre,
+        to_jsonb(a)->>'ubicacion' AS ubicacion,
+        COALESCE(NULLIF(to_jsonb(a)->>'direccion', ''), to_jsonb(a)->>'ubicacion') AS direccion
+      FROM almacenes a
+      ORDER BY a.id_almacen ASC;
     `;
 
     const resultado = await pool.query(query);
@@ -58,14 +58,14 @@ router.get('/:id', verificarToken, async (req, res) => {
   }
   try {
     const query = `
-      SELECT 
-        id_almacen, 
-        codigo,
-        nombre, 
-        ubicacion,
-        direccion 
-      FROM almacenes 
-      WHERE id_almacen = $1;
+      SELECT
+        a.id_almacen,
+        to_jsonb(a)->>'codigo' AS codigo,
+        a.nombre,
+        to_jsonb(a)->>'ubicacion' AS ubicacion,
+        COALESCE(NULLIF(to_jsonb(a)->>'direccion', ''), to_jsonb(a)->>'ubicacion') AS direccion
+      FROM almacenes a
+      WHERE a.id_almacen = $1;
     `;
     const resultado = await pool.query(query, [idAlmacen]);
 

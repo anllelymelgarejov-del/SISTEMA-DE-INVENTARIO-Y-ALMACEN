@@ -11,6 +11,8 @@ const productosRoutes = require('./routes/productos');
 const inventarioRoutes = require('./routes/inventario');
 const movimientosRoutes = require('./routes/movimientos');
 const reportesRoutes = require('./routes/reportes');
+const transferenciasRoutes = require('./routes/transferencias');
+const dashboardRoutes = require('./routes/dashboard');
 const auditoriaRoutes = require('./routes/auditoria');
 
 const app = express();
@@ -51,6 +53,9 @@ app.use('/api/movimientos', movimientosRoutes);
 // Reportes
 app.use('/api/reportes', reportesRoutes);
 
+// Transferencias de stock entre almacenes (requiere JWT en todas sus rutas)
+app.use('/api/transferencias', transferenciasRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 // Auditoría de Actividad (Exclusivo ADMIN)
 app.use('/api/auditoria', auditoriaRoutes);
 

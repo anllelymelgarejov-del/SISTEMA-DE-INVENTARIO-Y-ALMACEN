@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/db');
-const { verificarToken, verificarRol } = require('../middlewares/auth');
+const { verificarToken } = require('../middlewares/auth');
 
 /**
  * ============================================================================
@@ -54,7 +54,7 @@ const obtenerInventario = async (req, res) => {
         i.cantidad,
         COALESCE(p.stock_minimo, i.stock_minimo, 10) AS stock_minimo,
         (i.cantidad <= COALESCE(p.stock_minimo, i.stock_minimo, 10)) AS alerta_stock,
-        CASE 
+        CASE
           WHEN i.cantidad <= COALESCE(p.stock_minimo, i.stock_minimo, 10) THEN 'Crítico por Stock'
           ELSE 'Stock Normal'
         END AS estado_stock
@@ -104,7 +104,7 @@ router.get('/alertas-stock', verificarToken, async (req, res) => {
     await asegurarColumnaStockMinimo();
 
     const query = `
-      SELECT 
+      SELECT
         i.id_inventario,
         a.id_almacen,
         a.nombre AS nombre_almacen,
@@ -142,6 +142,40 @@ router.get('/alertas-stock', verificarToken, async (req, res) => {
       success: false,
       mensaje: 'Error de Servidor: ' + error.message,
     });
+  }
+});
+
+// GET /api/inventario/sugerir-fefo?almacen_id=&producto_id=&cantidad=
+router.get('/sugerir-fefo', verificarToken, async (req, res) => {
+  const almacenId = Number(req.query.almacen_id);
+  const productoId = Number(req.query.producto_id);
+  const cantidad = Number(req.query.cantidad);
+  if (![almacenId, productoId, cantidad].every(Number.isSafeInteger) || almacenId <= 0 || productoId <= 0 || cantidad <= 0) {
+    return res.status(400).json({ exito: false, mensaje: 'almacen_id, producto_id y cantidad deben ser enteros mayores a cero.' });
+  }
+  try {
+    const result = await pool.query(
+      `SELECT i.id_lote, l.numero_lote, TO_CHAR(l.fecha_vencimiento, 'YYYY-MM-DD') AS fecha_vencimiento,
+              i.cantidad AS stock_disponible
+       FROM inventario i
+       INNER JOIN lotes l ON l.id_lote = i.id_lote AND l.id_producto = i.id_producto
+       WHERE i.id_almacen = $1 AND i.id_producto = $2 AND i.cantidad > 0
+         AND l.fecha_vencimiento >= CURRENT_DATE
+       ORDER BY l.fecha_vencimiento ASC NULLS LAST, i.id_lote ASC`,
+      [almacenId, productoId]
+    );
+    let restante = cantidad;
+    const lotes = result.rows.map(row => {
+      const asignada = Math.min(restante, Number(row.stock_disponible));
+      restante -= asignada;
+      return { ...row, stock_disponible: Number(row.stock_disponible), cantidad_sugerida: asignada };
+    }).filter(row => row.cantidad_sugerida > 0);
+    return res.json({ exito: true, success: true, cantidad_solicitada: cantidad,
+      cantidad_cubierta: cantidad - restante, insuficiente: restante > 0,
+      faltante: restante, lotes, data: lotes });
+  } catch (error) {
+    console.error('Error al sugerir despacho FEFO:', error);
+    return res.status(500).json({ exito: false, mensaje: 'No se pudo calcular la sugerencia FEFO.' });
   }
 });
 

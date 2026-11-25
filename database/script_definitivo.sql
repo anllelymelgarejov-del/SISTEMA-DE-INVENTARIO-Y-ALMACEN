@@ -5,27 +5,16 @@
 --   2: Operario
 -- ==========================================================
 
--- 1. ELIMINAR TABLAS EXISTENTES (Orden inverso por dependencias)
-DROP TABLE IF EXISTS logs_auditoria CASCADE;
-DROP TABLE IF EXISTS detalle_transferencias CASCADE;
-DROP TABLE IF EXISTS transferencias CASCADE;
-DROP TABLE IF EXISTS movimientos CASCADE;
-DROP TABLE IF EXISTS inventario CASCADE;
-DROP TABLE IF EXISTS lotes CASCADE;
-DROP TABLE IF EXISTS productos CASCADE;
-DROP TABLE IF EXISTS almacenes CASCADE;
-DROP TABLE IF EXISTS usuarios CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
-DROP TABLE IF EXISTS tipos_movimiento CASCADE;
+-- 1. CREAR TABLAS SIN BORRAR NI ALTERAR DATOS EXISTENTES
 
 -- 2. CREAR LAS TABLAS OFICIALES CON RESTRICCIÓN ESTRICTA DE ROLES
-CREATE TABLE roles (
+CREATE TABLE IF NOT EXISTS roles (
     id_rol INT PRIMARY KEY CHECK (id_rol IN (1, 2)),
     nombre VARCHAR(50) UNIQUE NOT NULL CHECK (nombre IN ('Administrador', 'Operario')),
     descripcion TEXT
 );
 
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario SERIAL PRIMARY KEY,
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
@@ -35,7 +24,7 @@ CREATE TABLE usuarios (
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE almacenes (
+CREATE TABLE IF NOT EXISTS almacenes (
     id_almacen SERIAL PRIMARY KEY,
     codigo VARCHAR(20) UNIQUE NOT NULL,
     nombre VARCHAR(100) NOT NULL,
@@ -43,7 +32,7 @@ CREATE TABLE almacenes (
     direccion TEXT
 );
 
-CREATE TABLE productos (
+CREATE TABLE IF NOT EXISTS productos (
     id_producto SERIAL PRIMARY KEY,
     codigo_barras VARCHAR(50) UNIQUE NOT NULL,
     nombre VARCHAR(150) NOT NULL,
@@ -55,7 +44,7 @@ CREATE TABLE productos (
     stock_minimo INT NOT NULL DEFAULT 10 CHECK (stock_minimo >= 0)
 );
 
-CREATE TABLE lotes (
+CREATE TABLE IF NOT EXISTS lotes (
     id_lote SERIAL PRIMARY KEY,
     id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
     numero_lote VARCHAR(50) NOT NULL,
@@ -63,7 +52,7 @@ CREATE TABLE lotes (
     UNIQUE(id_producto, numero_lote)
 );
 
-CREATE TABLE inventario (
+CREATE TABLE IF NOT EXISTS inventario (
     id_inventario SERIAL PRIMARY KEY,
     id_almacen INT REFERENCES almacenes(id_almacen) ON DELETE CASCADE,
     id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
@@ -73,7 +62,7 @@ CREATE TABLE inventario (
     UNIQUE(id_almacen, id_producto, id_lote)
 );
 
-CREATE TABLE movimientos (
+CREATE TABLE IF NOT EXISTS movimientos (
     id_movimiento SERIAL PRIMARY KEY,
     id_almacen INT REFERENCES almacenes(id_almacen) ON DELETE CASCADE,
     id_producto INT REFERENCES productos(id_producto) ON DELETE CASCADE,
@@ -85,7 +74,7 @@ CREATE TABLE movimientos (
     observacion TEXT
 );
 
-CREATE TABLE transferencias (
+CREATE TABLE IF NOT EXISTS transferencias (
     id_transferencia SERIAL PRIMARY KEY,
     id_almacen_origen INT REFERENCES almacenes(id_almacen),
     id_almacen_destino INT REFERENCES almacenes(id_almacen),
@@ -94,7 +83,7 @@ CREATE TABLE transferencias (
     estado VARCHAR(30) DEFAULT 'Completado'
 );
 
-CREATE TABLE detalle_transferencias (
+CREATE TABLE IF NOT EXISTS detalle_transferencias (
     id_detalle SERIAL PRIMARY KEY,
     id_transferencia INT REFERENCES transferencias(id_transferencia) ON DELETE CASCADE,
     id_producto INT REFERENCES productos(id_producto),
@@ -102,28 +91,22 @@ CREATE TABLE detalle_transferencias (
     cantidad INT NOT NULL CHECK (cantidad > 0)
 );
 
-CREATE TABLE logs_auditoria (
-    id_log SERIAL PRIMARY KEY,
-    id_usuario INT REFERENCES usuarios(id_usuario) ON DELETE SET NULL,
-    accion VARCHAR(100) NOT NULL,
-    detalles TEXT,
-    ip_origen VARCHAR(60),
-    fecha_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Actualización aditiva para bases creadas con versiones previas del esquema.
+ALTER TABLE almacenes ADD COLUMN IF NOT EXISTS direccion TEXT;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_costo NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS stock_minimo INT NOT NULL DEFAULT 10;
+ALTER TABLE inventario ADD COLUMN IF NOT EXISTS stock_minimo INT NOT NULL DEFAULT 10;
 
 -- 3. DATOS INICIALES (SEEDS) - EXCLUSIVAMENTE ADMINISTRADOR (1) Y OPERARIO (2)
 INSERT INTO roles (id_rol, nombre, descripcion) VALUES 
 (1, 'Administrador', 'Control total del sistema, catálogos y gestión de usuarios'),
 (2, 'Operario', 'Gestión de entradas, salidas y consulta de inventario por almacén')
-ON CONFLICT (id_rol) DO UPDATE SET 
-    nombre = EXCLUDED.nombre, 
-    descripcion = EXCLUDED.descripcion;
+ON CONFLICT DO NOTHING;
 
-INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion, direccion) VALUES 
+INSERT INTO almacenes (id_almacen, codigo, nombre, ubicacion, direccion) VALUES
 (1, 'ALM-1', 'Almacén Central', 'Sede Principal', 'Sede Principal')
-ON CONFLICT (id_almacen) DO UPDATE SET
-    ubicacion = EXCLUDED.ubicacion,
-    direccion = EXCLUDED.direccion;
+ON CONFLICT (id_almacen) DO NOTHING;
 
 -- Usuario Administrador Oficial
 -- Correo: admin@almacen.com | Contraseña: admin123
@@ -132,13 +115,11 @@ VALUES (
     1,
     'Administrador', 
     'admin@almacen.com', 
-    '$2b$10$39WlB3u6f709V2R0NfW/U.L4m4hYw8oH0L3K3b9Uv4O3c6W5G3XvO', 
+    '$2b$10$Ihr2DMzDVrRpZpixV0oAMOZBOE0Twx8Ms5VV8Zr3EwyPMpoLOfjDK',
     1, 
     TRUE
 )
-ON CONFLICT (email) DO UPDATE SET 
-    nombre = EXCLUDED.nombre,
-    id_rol = 1;
+ON CONFLICT DO NOTHING;
 
 -- Usuario Operario Oficial
 -- Correo: operario@almacen.com | Contraseña: admin123
@@ -147,13 +128,19 @@ VALUES (
     2,
     'Operario', 
     'operario@almacen.com', 
-    '$2b$10$39WlB3u6f709V2R0NfW/U.L4m4hYw8oH0L3K3b9Uv4O3c6W5G3XvO', 
+    '$2b$10$Ihr2DMzDVrRpZpixV0oAMOZBOE0Twx8Ms5VV8Zr3EwyPMpoLOfjDK',
     2, 
     TRUE
 )
-ON CONFLICT (email) DO UPDATE SET 
-    nombre = EXCLUDED.nombre,
-    id_rol = 2;
+ON CONFLICT DO NOTHING;
 
 -- Sincronizar secuencia de autoincremento para id_usuario
-SELECT setval('usuarios_id_usuario_seq', COALESCE((SELECT MAX(id_usuario) FROM usuarios), 1));
+-- Avanzar la secuencia si hace falta, sin retrocederla en una base activa.
+SELECT setval(
+    'usuarios_id_usuario_seq',
+    GREATEST(
+        COALESCE((SELECT MAX(id_usuario) FROM usuarios), 1),
+        (SELECT last_value FROM usuarios_id_usuario_seq)
+    ),
+    TRUE
+);
