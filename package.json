@@ -5,6 +5,7 @@
   "description": "Sistema WMS de inventarios - Estructura Backend y Frontend",
   "scripts": {
     "start": "npm start --prefix backend",
-    "dev": "npm run dev --prefix backend"
+    "dev": "npm run dev --prefix backend",
+    "test:smoke": "node backend/scripts/smoke_test.js"
   }
 }

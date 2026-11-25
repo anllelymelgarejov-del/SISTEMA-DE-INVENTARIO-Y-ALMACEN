@@ -42,6 +42,8 @@
     $('dashboard-soon').textContent = number.format([...lots.values()].filter(soon).length);
     $('dashboard-expired').textContent = number.format([...lots.values()].filter(expired).length);
     renderMovements(recent);
+    const reposicion = state.data.replenishment || [];
+    $('dashboard-replenishment').innerHTML = reposicion.length ? `<div class="table-responsive"><table class="table dash-table"><thead><tr><th>Producto</th><th class="text-end">Stock actual</th><th class="text-end">Consumo diario</th><th class="text-end">Cobertura</th><th class="text-end">Compra sugerida</th></tr></thead><tbody>${reposicion.map(item => `<tr><td><span class="fw-semibold">${escape(item.producto)}</span><div class="dash-muted">${escape(item.codigo_barras)}</div></td><td class="text-end">${number.format(amount(item.stock_actual))}</td><td class="text-end">${number.format(amount(item.consumo_diario))}</td><td class="text-end">${item.dias_cobertura === null ? '<span class="dash-tag">Sin consumo</span>' : `${number.format(amount(item.dias_cobertura))} días`}</td><td class="text-end fw-semibold">${number.format(amount(item.cantidad_sugerida))}</td></tr>`).join('')}</tbody></table></div>` : empty('No hay productos en el catálogo.');
     const totals = warehouses.filter(item => !id || String(item.id_almacen) === id).map(item => ({
       name: item.nombre,
       value: stock.filter(row => String(row.id_almacen) === String(item.id_almacen)).reduce((sum, row) => sum + amount(row.cantidad), 0),
@@ -87,8 +89,8 @@
     refresh.disabled = true;
     refresh.innerHTML = '<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Actualizando';
     try {
-      const responses = await Promise.all(['/api/almacenes', '/api/inventario', '/api/movimientos'].map(url => fetchAutenticado(url)));
-      const data = { warehouses: rows(responses[0], 'almacenes'), inventory: rows(responses[1], 'inventario'), movements: rows(responses[2], 'movimientos').slice(0, 100) };
+      const responses = await Promise.all(['/api/almacenes', '/api/inventario', '/api/movimientos', '/api/dashboard/reposicion'].map(url => fetchAutenticado(url)));
+      const data = { warehouses: rows(responses[0], 'almacenes'), inventory: rows(responses[1], 'inventario'), movements: rows(responses[2], 'movimientos').slice(0, 100), replenishment: rows(responses[3], 'reposicion') };
       data.movements.sort((a, b) => (new Date(b.fecha).getTime() || 0) - (new Date(a.fecha).getTime() || 0));
       const selected = $('dashboard-warehouse').value;
       $('dashboard-warehouse').innerHTML = '<option value="">Todos los almacenes</option>' + data.warehouses.map(item => `<option value="${escape(item.id_almacen)}">${escape(item.nombre)}</option>`).join('');

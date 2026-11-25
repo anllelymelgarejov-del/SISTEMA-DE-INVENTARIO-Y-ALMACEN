@@ -11,12 +11,15 @@ const { registrarAuditoria } = require('./auditoria');
  * Tabla: productos (id_producto, codigo_barras, nombre, descripcion, precio_costo, precio_venta)
  */
 
-// Asegurar de forma transparente que la columna 'stock_minimo' exista en la tabla productos
+// Asegurar que las columnas de precios y stock mínimo existan en versiones previas del esquema.
 let columnaStockMinimoProductosVerificada = false;
 async function asegurarColumnaStockMinimoProductos() {
   if (columnaStockMinimoProductosVerificada) return;
   try {
+    await pool.query('ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_costo NUMERIC(10,2) NOT NULL DEFAULT 0.00;');
+    await pool.query('ALTER TABLE productos ADD COLUMN IF NOT EXISTS precio_venta NUMERIC(10,2) NOT NULL DEFAULT 0.00;');
     await pool.query('ALTER TABLE productos ADD COLUMN IF NOT EXISTS stock_minimo INT NOT NULL DEFAULT 10;');
+    await pool.query('UPDATE productos SET precio_costo = precio, precio_venta = precio WHERE precio IS NOT NULL AND precio <> 0 AND precio_costo = 0 AND precio_venta = 0;');
     columnaStockMinimoProductosVerificada = true;
   } catch (_) {
     columnaStockMinimoProductosVerificada = true;
@@ -34,7 +37,7 @@ router.get('/', verificarToken, async (req, res) => {
         codigo_barras, 
         nombre, 
         descripcion, 
-        precio_costo, 
+        precio_costo,
         precio_venta,
         COALESCE(stock_minimo, 10) AS stock_minimo
       FROM productos 
@@ -76,7 +79,7 @@ router.get('/:id', verificarToken, async (req, res) => {
         codigo_barras, 
         nombre, 
         descripcion, 
-        precio_costo, 
+        precio_costo,
         precio_venta,
         COALESCE(stock_minimo, 10) AS stock_minimo
       FROM productos 

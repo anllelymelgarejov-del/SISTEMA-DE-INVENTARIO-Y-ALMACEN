@@ -69,7 +69,7 @@ const validarStockDisponible = async (req, res, next) => {
         SELECT COALESCE(SUM(iu.cantidad), 0)::int AS stock_disponible
         FROM inventario iu
         INNER JOIN lotes l ON iu.id_lote = l.id_lote
-        WHERE iu.id_producto = $1 
+        WHERE iu.id_producto = $1
           AND iu.cantidad > 0
           AND l.fecha_vencimiento >= CURRENT_DATE;
       `;
@@ -266,7 +266,7 @@ const validarEstadoLote = async (req, res, next) => {
       const prodId = parseInt(id_producto, 10);
 
       const queryFefoLotes = `
-        SELECT 
+        SELECT
           COUNT(*) FILTER (WHERE l.fecha_vencimiento < CURRENT_DATE AND iu.cantidad > 0)::int AS lotes_vencidos,
           COUNT(*) FILTER (WHERE l.fecha_vencimiento >= CURRENT_DATE AND iu.cantidad > 0)::int AS lotes_vigentes
         FROM inventario iu

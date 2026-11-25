@@ -1,6 +1,8 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
+const sslHabilitado = process.env.DB_SSL === 'true' || process.env.NODE_ENV === 'production';
+
 /**
  * ============================================================================
  * CONFIGURACIÓN DEL POOL DE CONEXIONES POSTGRESQL (LOCAL Y NUBE)
@@ -28,7 +30,7 @@ const poolConfig = process.env.DATABASE_URL
       database: process.env.DB_NAME,
       password: process.env.DB_PASSWORD,
       port: Number(process.env.DB_PORT) || 5432,
-      ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+      ssl: sslHabilitado ? { rejectUnauthorized: false } : false,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 5000,

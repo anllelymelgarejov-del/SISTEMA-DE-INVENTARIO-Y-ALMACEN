@@ -2,7 +2,10 @@ const express = require('express');
 const router = express.Router();
 const ExcelJS = require('exceljs');
 const pool = require('../config/db');
-const { verificarToken, verificarRol } = require('../middlewares/auth');
+const { verificarToken } = require('../middlewares/auth');
+
+// Los reportes contienen datos operativos y requieren sesión JWT.
+router.use(verificarToken);
 
 /**
  * Formatea una fecha a DD/MM/AAAA HH:mm:ss
@@ -20,7 +23,7 @@ function formatearFechaHora(fechaInput) {
  * @desc    Genera y descarga un archivo Excel (.xlsx) con el reporte consolidado
  *          de inventario por almacén, lotes y estado FEFO
  */
-router.get('/excel', verificarToken, async (req, res) => {
+router.get('/excel', async (req, res) => {
   try {
     const query = `
       SELECT 
@@ -191,7 +194,7 @@ router.get('/excel', verificarToken, async (req, res) => {
  * @route   GET /api/reportes/historial/excel
  * @desc    Genera y descarga un archivo Excel (.xlsx) con el historial auditado de movimientos (Kardex)
  */
-router.get('/historial/excel', verificarToken, async (req, res) => {
+router.get('/historial/excel', async (req, res) => {
   try {
     const query = `
       SELECT 
